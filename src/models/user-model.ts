@@ -34,8 +34,6 @@ const userSchema: Schema<User> = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    minLength: [8, 'Password must cantain at least 8 chatacters.'],
-    maxLength: [32, 'Password cannot exceed 32 characters.'],
   },
   userType: { type: String, required: true },
   genre: [{ type: String }],

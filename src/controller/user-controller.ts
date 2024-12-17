@@ -1,7 +1,60 @@
-import {NextFunction, Request, Response} from "express";
-import User from "../models/user-model";
+import { NextFunction, Request, Response } from 'express';
+import User from '../models/user-model';
+import bcrypt from 'bcrypt';
+
+//? Register a user
+export const registerUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { fullName, email, mobileNumber, password, userType } = req.body;
+
+    const existingUserByMobile = await User.findOne({ mobileNumber });
+
+    if (existingUserByMobile) {
+      res
+        .status(400)
+        .json({ error: 'User already exists with this mobile Number' });
+      return;
+    }
+    const existingUserByEmail = await User.findOne({ email });
+
+    if (existingUserByEmail) {
+      res
+        .status(400)
+        .json({ error: 'User already exists with this Email' });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      fullName,
+      email,
+      mobileNumber,
+      password: hashedPassword,
+      userType,
+      isActive: true,
+      isVerified: false,
+    });
+    const savedUser = await newUser.save();
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        id: savedUser._id,
+        fullName: savedUser.fullName,
+        email: savedUser.email,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 //? Get All users route
+/*
 export const getAllUsers = async (
   req: Request,
   res: Response,
@@ -14,8 +67,10 @@ export const getAllUsers = async (
     next(error); 
   }
 };
+*/
 
 //? Get user by id
+/*
 export const getUserById = async (
   req: Request,
   res: Response,
@@ -33,23 +88,10 @@ export const getUserById = async (
     next(err); 
   }
 };
-
-//? Create a user
-export const createUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const newUser = await User.create(req.body);
-    const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
-  } catch (error) {
-    next(error);
-  }
-};
+*/
 
 //? Update a user
+/*
 export const updateUser = async (
   req: Request,
   res: Response,
@@ -68,8 +110,10 @@ export const updateUser = async (
     next(err);
   }
 };
+*/
 
 //? Delete a user
+/*
 export const deleteUser = async (
   req: Request,
   res: Response,
@@ -87,4 +131,4 @@ export const deleteUser = async (
     next(err);
   }
 };
-
+*/

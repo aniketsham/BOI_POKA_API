@@ -12,7 +12,9 @@ app.get("/", (req, res) => {
   res.send("Hello BOI POKA");
 });
 
-app.use('/api/users', userRouter); // Registering the router
+app.use(express.json());
+
+app.use('/api/user', userRouter); 
 
 
 app.listen(PORT, () => {

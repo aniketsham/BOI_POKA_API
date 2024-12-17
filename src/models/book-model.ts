@@ -6,7 +6,7 @@ export interface Book extends mongoose.Document {
   author: string;
   publisher: string;
   publicationYear: number;
-  description: string; // Fixed typo here
+  description: string; 
   genre: string;
   coverImage: string;
   language: string;
@@ -14,12 +14,12 @@ export interface Book extends mongoose.Document {
   addedAt: Date;
   updatedAt: Date;
   location: string;
-  borrowedBy?: string; // Optional, will be filled when borrowed
-  borrowedAt?: Date; // Optional, will be filled when borrowed
-  borrowedTill?: Date; // Optional, will be filled when borrowed
+  borrowedBy?: string; 
+  borrowedAt?: Date; 
+  borrowedTill?: Date; 
   isDeleted: boolean;
-  deletedAt?: Date; // Optional, will be filled when deleted
-  deletedBy?: string; // Optional, will be filled when deleted
+  deletedAt?: Date; 
+  deletedBy?: string; 
 }
 
 const bookSchema: mongoose.Schema<Book> = new mongoose.Schema({
@@ -29,7 +29,7 @@ const bookSchema: mongoose.Schema<Book> = new mongoose.Schema({
   publisher: { type: String, required: true },
   publicationYear: { type: Number, required: true },
   genre: { type: String, required: true },
-  description: { type: String, required: true }, // Fixed typo
+  description: { type: String, required: true }, 
   coverImage: { type: String, required: true },
   language: { type: String, required: true },
   rating: { type: Number, required: true },
