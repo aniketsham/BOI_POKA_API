@@ -13,15 +13,15 @@ export interface User extends Document {
   createdAt: Date;
   updatedAt: Date;
 
-  deactivatedBy?: string; // Optional
-  deactivatedAt?: Date; // Optional
+  deactivatedBy?: string; 
+  deactivatedAt?: Date; 
 
   isActive: boolean;
   isVerified: boolean;
 
   isDeleted: boolean;
-  deletedAt?: Date; // Optional
-  deletedBy?: string; // Optional
+  deletedAt?: Date; 
+  deletedBy?: string; 
 
   notificationToken: string;
   favourites: string[];
@@ -30,7 +30,7 @@ export interface User extends Document {
 const userSchema: Schema<User> = new mongoose.Schema({
   fullName: { type: String, required: true },
   mobileNumber: { type: String, required: true },
-  email: { type: String, required: true, unique: true }, // Ensure email uniqueness
+  email: { type: String, required: true, unique: true }, 
   password: {
     type: String,
     required: true,
@@ -60,7 +60,7 @@ const userSchema: Schema<User> = new mongoose.Schema({
   favourites: [{ type: String }],
 });
 
-// Pre-save middleware to handle updatedAt field
+//? Pre-save middleware to handle updatedAt field
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     next();
