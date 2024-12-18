@@ -137,44 +137,65 @@ export const getUserById = async (
 */
 
 //? Update a user
-/*
+
 export const updateUser = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    if (!updatedUser) {
-        res.status(404).json({ error: 'User not found' });
-        return
+    const { userId } = req.params; 
+    // console.log(userId);
+
+    const updateData = req.body;
+
+    if (updateData.password) {
+      const hashedPassword = await bcrypt.hash(updateData.password, 10);
+      updateData.password = hashedPassword; 
     }
-    res.status(200).json(updatedUser);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { ...updateData, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'User updated successfully',
+      user: updatedUser,
+    });
   } catch (err) {
     next(err);
   }
 };
-*/
+
 
 //? Delete a user
-/*
+
 export const deleteUser = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    const { userId } = req.params;
+    const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) {
         res.status(404).json({ error: 'User not found' });
         return
     } 
         
-    res.status(200).json({ message: 'User deleted successfully' });
+    res.status(200).json({
+      message: 'User deleted successfully',
+      user: deletedUser,
+    });
   } catch (err) {
     next(err);
   }
 };
-*/
+
