@@ -54,7 +54,7 @@ const userSchema: Schema<User> = new mongoose.Schema({
     },
   },
   userType: { type: String, required: true },
-  role: { type: String, required: true },
+  role: { type: String, required: false, default: 'User' },
   genre: [{ type: String }],
   friends: [{ type: String }],
   profileImage: { type: String },
