@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import User from '../models/user-model';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 //? Register a user
 export const registerUser = async (
@@ -28,13 +29,11 @@ export const registerUser = async (
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const newUser = new User({
       fullName,
       email,
       mobileNumber,
-      password: hashedPassword,
+      password,
       userType,
       isActive: true,
       isVerified: false,
@@ -50,6 +49,53 @@ export const registerUser = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+
+//? Login user
+export const loginUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { mobileNumber, password } = req.body;
+
+    const user = await User.findOne({ mobileNumber });
+    // console.log(user)
+
+    if (!user) {
+    //   console.log('User not found with mobile number:', mobileNumber);
+      res.status(400).json({ error: 'Invalid mobile number or password' });
+      return;
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+    //   console.log('Invalid password for mobile number:', mobileNumber);
+      res.status(400).json({ error: 'Invalid mobile number or password' });
+      return;
+    }
+
+    const token = jwt.sign(
+      { id: user._id, mobileNumber: user.mobileNumber },
+      process.env.JWT_SECRET as string, 
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({
+      message: 'Login successful',
+      token, 
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        mobileNumber: user.mobileNumber,
+      },
+    });
+    return
+  } catch (error) {
+    next(error); 
   }
 };
 
