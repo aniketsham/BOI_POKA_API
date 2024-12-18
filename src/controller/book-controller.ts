@@ -1,95 +1,83 @@
 import { NextFunction, Request, Response } from 'express';
 import Book from '../models/book-model';
-export const addBook = async (
+// export const addBook = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<void> => {
+//   try {
+//     const books = req.body.items;
+
+//     if (!books || books.length === 0) {
+//       throw new Error('No books found in the response');
+//     }
+
+//     const savedBooks = await Promise.all(
+//       books.map(async (book: any) => {
+//         const { volumeInfo } = book;
+
+//         const isbn = volumeInfo.industryIdentifiers.map(
+//           (identifier: any) => identifier.identifier
+//         );
+//         console.log;
+//         const title = volumeInfo.title;
+//         const author = volumeInfo.authors || [];
+//         const publisher = volumeInfo.publisher || '';
+//         const publicationYear = parseInt(volumeInfo.publishedDate, 10);
+//         const genre = volumeInfo.categories || [];
+//         const description = volumeInfo.description || '';
+//         const coverImage = volumeInfo.imageLinks?.thumbnail || '';
+//         const language = volumeInfo.language ? [volumeInfo.language] : [];
+//         const rating = volumeInfo.averageRating || 0;
+
+//         const newBook = new Book({
+//           ISBN: isbn,
+//           title,
+//           author,
+//           publisher,
+//           publicationYear,
+//           genre,
+//           description,
+//           coverImage,
+//           language,
+//           rating,
+//           addedAt: new Date(),
+//           updatedAt: new Date(),
+//           isDeleted: false,
+//         });
+
+//         await newBook.save();
+//         return newBook;
+//       })
+//     );
+
+//     res.status(201).json(savedBooks);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+export const handleBook = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    // const {
-    //   ISBN,
-    //   title,
-    //   author,
-    //   publisher,
-    //   publicationYear,
-    //   genre,
-    //   description,
-    //   coverImage,
-    //   language,
-    //   rating,
-    // } = req.body;
-
-    // if (
-    //   !ISBN ||
-    //   !title ||
-    //   !author ||
-    //   !publisher ||
-    //   !publicationYear ||
-    //   !genre ||
-    //   !description ||
-    //   !coverImage ||
-    //   !language ||
-    //   !rating
-    // ) {
-    //   if (!Array.isArray(ISBN)) {
-    //     res.status(400).json({ error: 'ISBN must be an array' });
-    //     return;
-    //   }
-
-    //   res.status(400).json({ error: 'All fields are required' });
-    //   return;
-    // }
-    /*
-    input eg 
-    {
-      "ISBN": "1234567890",
-      "title": "Book Title",
-      "author": "Author Name",
-      "publisher": "Publisher Name",
-      "publicationYear": 2023,
-      "genre": ["Genre 1", "Genre 2"],
-      "description": "Description",
-      "coverImage": "https://example.com/cover.jpg",
-      "language": ["English", "French"],
-      "rating": 4.5
-      
-    }
-    */
-
-    // const existingBook = await Book.findOne({ ISBN: { $in: ISBN } });
-    // if (existingBook) {
-    //   res.status(400).json({ error: 'Book already exists' });
-    //   return;
-    // }
-    // const newBook = new Book({
-    //   ISBN,
-    //   title,
-    //   author,
-    //   publisher,
-    //   publicationYear,
-    //   genre,
-    //   description,
-    //   coverImage,
-    //   language,
-    //   rating,
-    // });
-    // await newBook.save();
-    // res.status(201).json(newBook);
-
     const books = req.body.items;
 
     if (!books || books.length === 0) {
       throw new Error('No books found in the response');
     }
 
+    // Process each book and check for existing ISBN
     const savedBooks = await Promise.all(
       books.map(async (book: any) => {
         const { volumeInfo } = book;
 
-        const isbn = volumeInfo.industryIdentifiers.map(
+        // Extract ISBN array (handling both ISBN-10 and ISBN-13)
+        const isbnArray = volumeInfo.industryIdentifiers.map(
           (identifier: any) => identifier.identifier
         );
-        console.log;
+
         const title = volumeInfo.title;
         const author = volumeInfo.authors || [];
         const publisher = volumeInfo.publisher || '';
@@ -98,28 +86,47 @@ export const addBook = async (
         const description = volumeInfo.description || '';
         const coverImage = volumeInfo.imageLinks?.thumbnail || '';
         const language = volumeInfo.language ? [volumeInfo.language] : [];
-        const rating = volumeInfo.averageRating || 0;
+        const rating = volumeInfo.averageRating || 0.5;
 
-        // Create a new Book document
-        const newBook = new Book({
-          ISBN: isbn,
-          title,
-          author,
-          publisher,
-          publicationYear,
-          genre,
-          description,
-          coverImage,
-          language,
-          rating,
-          addedAt: new Date(),
-          updatedAt: new Date(),
-          isDeleted: false,
+        const existingBook = await Book.findOne({
+          ISBN: { $in: isbnArray },
         });
 
-        // Save the book to the database
-        await newBook.save();
-        return newBook;
+        if (existingBook) {
+          existingBook.title = title;
+          existingBook.author = author;
+          existingBook.publisher = publisher;
+          existingBook.publicationYear = publicationYear;
+          existingBook.genre = genre;
+          existingBook.description = description;
+          existingBook.coverImage = coverImage;
+          existingBook.language = language;
+          existingBook.rating = rating;
+          existingBook.updatedAt = new Date();
+
+          await existingBook.save();
+
+          return existingBook;
+        } else {
+          const newBook = new Book({
+            ISBN: isbnArray,
+            title,
+            author,
+            publisher,
+            publicationYear,
+            genre,
+            description,
+            coverImage,
+            language,
+            rating,
+            addedAt: new Date(),
+            updatedAt: new Date(),
+            isDeleted: false,
+          });
+
+          await newBook.save();
+          return newBook;
+        }
       })
     );
 
@@ -169,18 +176,6 @@ export const fetchBookByAuthor = async (
   }
 };
 
-export const updateBook = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    res.status(200).json({ message: 'Book updated successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const fetchSimilarBooks = async (
   req: Request,
   res: Response,
@@ -220,6 +215,62 @@ export const fetchBookById = async (
   try {
     const ParamId = req.params.id;
     const book = await Book.findById(ParamId);
+    if (!book) {
+      res.status(404).json({ error: 'Book not found' });
+      return;
+    }
+    res.status(200).json(book);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const fetchFilteredBooks = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { genre, rating, limit } = req.query;
+
+    const filter: any = {};
+
+    if (genre) {
+      const genres = Array.isArray(genre) ? genre : [genre];
+      filter.genre = {
+        $in: genres.map((g) => new RegExp(`^${g}$`, 'i')), // Case-insensitive matching
+      };
+    }
+
+    if (rating) {
+      filter.rating = { $gte: parseFloat(rating as string) };
+    }
+
+    const books = await Book.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit ? parseInt(limit as string, 10) : 10); // Default limit to 10 if not provided
+
+    if (!books.length) {
+      res.status(404).json({ error: 'No books found matching the criteria' });
+      return;
+    }
+
+    res.status(200).json(books);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const fetchBookByISBN = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const isbn = req.params.isbn;
+    const book = await Book.findOne({
+      ISBN: { $in: isbn },
+    });
     if (!book) {
       res.status(404).json({ error: 'Book not found' });
       return;
