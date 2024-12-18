@@ -43,6 +43,7 @@ adminSchema.pre('save', async function (next) {
   next();
 });
 
+
 adminSchema.methods.comparePassword = function (
   enteredPassword: string
 ): Promise<boolean> {

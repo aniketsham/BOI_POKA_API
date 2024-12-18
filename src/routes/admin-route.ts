@@ -1,12 +1,21 @@
 import { Router } from 'express';
-import { loginAdmin, registerAdmin } from '../controller/admin-controller';
+import { getAllUsers, loginAdmin, registerAdmin } from '../controller/admin-controller';
+import { registerAdminValidator } from '../validations/validation';
+import { authenticateAdmin } from '../middlewares/authenticate-admin';
 
 const adminRouter = Router();
 
-adminRouter.post('/register', registerAdmin);
+adminRouter.post('/register', registerAdminValidator, registerAdmin);
 adminRouter.post('/login', loginAdmin);
+adminRouter.get('/protected', authenticateAdmin, (req, res) => {
+  
+  res.status(200).json({
+    message: 'Welcome, admin! You have access to the protected route.',
+    admin: req.body.role,
+  });
+});
 
-// userRouter.get('/', getAllUsers);
+adminRouter.get('/users', authenticateAdmin, getAllUsers);
 // userRouter.get('/:id', getUserById);
 
 export default adminRouter;
