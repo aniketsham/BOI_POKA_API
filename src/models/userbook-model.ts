@@ -8,7 +8,11 @@ export interface UserBook extends Document {
     status: 'reading' | 'completed' | 'paused';
     location: number[][];
     source: string;
-  };
+    borrowedBy?: mongoose.Schema.Types.ObjectId;
+    borrowedAt?: Date;
+    borrowedUntil?: Date;
+  }[];
+
   addedAt: Date;
 
   updatedAt: Date;
@@ -28,6 +32,9 @@ const userBookSchema: Schema<UserBook> = new mongoose.Schema({
       },
       location: { type: [[Number]], default: [] },
       source: { type: String, default: '' },
+      borrowedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      borrowedAt: { type: Date },
+      borrowedUntil: { type: Date },
     },
   ],
 
@@ -37,3 +44,5 @@ const userBookSchema: Schema<UserBook> = new mongoose.Schema({
 });
 
 const UserBook = mongoose.model('UserBook', userBookSchema);
+
+export default UserBook;
