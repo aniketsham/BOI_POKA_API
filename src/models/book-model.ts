@@ -1,44 +1,37 @@
 import mongoose from 'mongoose';
 
 export interface Book extends mongoose.Document {
-  ISBN: string;
+  ISBN: string[];
   title: string;
   author: string;
   publisher: string;
   publicationYear: number;
-  description: string; 
-  genre: string;
+  description: string;
+  genre: string[];
   coverImage: string;
-  language: string;
+  language: string[];
   rating: number;
   addedAt: Date;
   updatedAt: Date;
-  location: string;
-  borrowedBy?: string; 
-  borrowedAt?: Date; 
-  borrowedTill?: Date; 
+
   isDeleted: boolean;
-  deletedAt?: Date; 
-  deletedBy?: string; 
+  deletedAt?: Date;
+  deletedBy?: string;
 }
 
 const bookSchema: mongoose.Schema<Book> = new mongoose.Schema({
-  ISBN: { type: String, required: true },
+  ISBN: [{ type: String, required: true }],
   title: { type: String, required: true },
   author: { type: String, required: true },
   publisher: { type: String, required: true },
   publicationYear: { type: Number, required: true },
-  genre: { type: String, required: true },
-  description: { type: String, required: true }, 
+  genre: [{ type: String, required: true }],
+  description: { type: String, required: true },
   coverImage: { type: String, required: true },
-  language: { type: String, required: true },
+  language: [{ type: String, required: true }],
   rating: { type: Number, required: true },
   addedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-  location: { type: String, required: true },
-  borrowedBy: { type: String },
-  borrowedAt: { type: Date },
-  borrowedTill: { type: Date },
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date },
   deletedBy: { type: String },
