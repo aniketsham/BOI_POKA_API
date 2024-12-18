@@ -2,10 +2,10 @@ import { Router } from 'express';
 import {
     loginUser,
     registerUser,
+    updateUser,
+    deleteUser,
 //   getAllUsers,
 //   getUserById,
-//   updateUser,
-//   deleteUser,
 } from '../controller/user-controller';
 import { registerValidation } from '../validations/validation';
 import { handleFacebookLogin, handleGoogleLogin, handleLinkedinLogin } from '../controller/auth-controller';
@@ -18,9 +18,9 @@ userRouter.post('/login', loginUser);
 userRouter.post('/google', handleGoogleLogin);
 userRouter.post('/linkedin', handleLinkedinLogin);
 userRouter.post('/facebook', handleFacebookLogin);
+userRouter.put('/update/:userId', updateUser);
+userRouter.delete('/delete/:userId', deleteUser);
 // userRouter.get('/', getAllUsers);
 // userRouter.get('/:id', getUserById);
-// userRouter.put('/update/:id', updateUser);
-// userRouter.delete('/:id', deleteUser);
 
 export default userRouter;

@@ -13,6 +13,7 @@ export interface User extends Document {
   email: string;
   password: string;
   userType: string;
+  role: string;
   genre: string[];
   friends: string[];
 
@@ -53,6 +54,7 @@ const userSchema: Schema<User> = new mongoose.Schema({
     },
   },
   userType: { type: String, required: true },
+  role: { type: String, required: true },
   genre: [{ type: String }],
   friends: [{ type: String }],
   profileImage: { type: String },
