@@ -8,7 +8,7 @@ import {
 //   deleteUser,
 } from '../controller/user-controller';
 import { registerValidation } from '../validations/validation';
-import { handleGoogleLogin } from '../controller/auth-controller';
+import { handleGoogleLogin, handleLinkedinLogin } from '../controller/auth-controller';
 // import { validate } from '../middlewares/validate';
 
 const userRouter = Router();
@@ -16,6 +16,7 @@ const userRouter = Router();
 userRouter.post('/register', registerValidation, registerUser);
 userRouter.post('/login', loginUser);
 userRouter.post('/google', handleGoogleLogin);
+userRouter.post('/linkedin', handleLinkedinLogin);
 // userRouter.get('/', getAllUsers);
 // userRouter.get('/:id', getUserById);
 // userRouter.put('/update/:id', updateUser);
