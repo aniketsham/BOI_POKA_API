@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { registerAdmin } from '../controller/admin-controller';
+import { loginAdmin, registerAdmin } from '../controller/admin-controller';
 
 const adminRouter = Router();
 
 adminRouter.post('/register', registerAdmin);
-// adminRouter.post('/login', loginUser);
+adminRouter.post('/login', loginAdmin);
 
 // userRouter.get('/', getAllUsers);
 // userRouter.get('/:id', getUserById);
