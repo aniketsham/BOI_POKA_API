@@ -1,6 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 
+export interface SocialProvider {
+  id: string;
+  provider: string; //? yahan aayega google, linkedin ya facebook
+  email: string;
+}
+
 export interface User extends Document {
   fullName: string;
   mobileNumber: string;
@@ -25,6 +31,8 @@ export interface User extends Document {
 
   notificationToken: string;
   favourites: string[];
+  profileImage: string;
+  socialProvider: SocialProvider[]
 
   comparePassword(enteredPassword: string): Promise<boolean>;
 }
@@ -32,7 +40,7 @@ export interface User extends Document {
 const userSchema: Schema<User> = new mongoose.Schema({
   fullName: { type: String, required: true },
   mobileNumber: { type: String, required: true },
-  email: { type: String, required: true, unique: true }, 
+  email: { type: String, required: true, unique: true },
   password: {
     type: String,
     required: true,
@@ -40,6 +48,7 @@ const userSchema: Schema<User> = new mongoose.Schema({
   userType: { type: String, required: true },
   genre: [{ type: String }],
   friends: [{ type: String }],
+  profileImage: { type: String },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
@@ -51,13 +60,19 @@ const userSchema: Schema<User> = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
 
   isDeleted: { type: Boolean, default: false },
-
   deletedAt: { type: Date },
   deletedBy: { type: String },
 
   notificationToken: { type: String },
 
   favourites: [{ type: String }],
+  socialProvider: [
+    {
+      id: { type: String, required: true },
+      provider: { type: String, required: true },
+      email: { type: String, required: true },
+    },
+  ],
 });
 
 //? Pre-save middleware to handle updatedAt field
