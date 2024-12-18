@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 export interface Book extends mongoose.Document {
   ISBN: string[];
   title: string;
-  author: string;
-  publisher: string;
+  author: string[]; // added for because book can have multiple authors
+  publisher?: string;
   publicationYear: number;
   description: string;
   genre: string[];
@@ -22,8 +22,8 @@ export interface Book extends mongoose.Document {
 const bookSchema: mongoose.Schema<Book> = new mongoose.Schema({
   ISBN: [{ type: String, required: true }],
   title: { type: String, required: true },
-  author: { type: String, required: true },
-  publisher: { type: String, required: true },
+  author: [{ type: String, required: true }],
+  publisher: { type: String },
   publicationYear: { type: Number, required: true },
   genre: [{ type: String, required: true }],
   description: { type: String, required: true },
