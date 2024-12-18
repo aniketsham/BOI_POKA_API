@@ -39,11 +39,18 @@ export interface User extends Document {
 
 const userSchema: Schema<User> = new mongoose.Schema({
   fullName: { type: String, required: true },
-  mobileNumber: { type: String, required: true },
+  mobileNumber: {
+    type: String,
+    required: function () {
+      return !this.socialProvider || this.socialProvider.length === 0;
+    },
+  },
   email: { type: String, required: true, unique: true },
   password: {
     type: String,
-    required: true,
+    required: function () {
+      return !this.socialProvider || this.socialProvider.length === 0;
+    },
   },
   userType: { type: String, required: true },
   genre: [{ type: String }],
