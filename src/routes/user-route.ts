@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+    loginUser,
     registerUser,
 //   getAllUsers,
 //   getUserById,
@@ -12,6 +13,7 @@ import { registerValidation } from '../validations/validation';
 const userRouter = Router();
 
 userRouter.post('/register', registerValidation, registerUser);
+userRouter.post('/login', loginUser);
 // userRouter.get('/', getAllUsers);
 // userRouter.get('/:id', getUserById);
 // userRouter.put('/update/:id', updateUser);

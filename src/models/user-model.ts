@@ -13,18 +13,20 @@ export interface User extends Document {
   createdAt: Date;
   updatedAt: Date;
 
-  deactivatedBy?: string; 
-  deactivatedAt?: Date; 
+  deactivatedBy?: string;
+  deactivatedAt?: Date;
 
   isActive: boolean;
   isVerified: boolean;
 
   isDeleted: boolean;
-  deletedAt?: Date; 
-  deletedBy?: string; 
+  deletedAt?: Date;
+  deletedBy?: string;
 
   notificationToken: string;
   favourites: string[];
+
+  comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
 const userSchema: Schema<User> = new mongoose.Schema({
@@ -66,8 +68,11 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-userSchema.methods.comparePassword = async function (enteredPassword: string) {
-  return await bcrypt.compare(enteredPassword, this.password);
+// Define the comparePassword method
+userSchema.methods.comparePassword = function (
+  enteredPassword: string
+): Promise<boolean> {
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 const User = mongoose.model<User>('User', userSchema);
