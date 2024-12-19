@@ -3,11 +3,11 @@ import bcrypt from 'bcrypt';
 
 export interface SocialProvider {
   id: string;
-  provider: string; //? yahan aayega google, linkedin ya facebook
+  provider: string;
   email: string;
 }
 
-export interface User extends Document {
+export interface UserModel extends Document {
   fullName: string;
   mobileNumber: string;
   email: string;
@@ -33,12 +33,12 @@ export interface User extends Document {
   notificationToken: string;
   favourites: string[];
   profileImage: string;
-  socialProvider: SocialProvider[]
+  socialProvider: SocialProvider[];
 
   comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
-const userSchema: Schema<User> = new mongoose.Schema({
+const userSchema: Schema<UserModel> = new mongoose.Schema({
   fullName: { type: String, required: true },
   mobileNumber: {
     type: String,
@@ -99,6 +99,6 @@ userSchema.methods.comparePassword = function (
   return bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model<User>('User', userSchema);
+const User = mongoose.model<UserModel>('User', userSchema);
 
 export default User;
