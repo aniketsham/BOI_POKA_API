@@ -16,6 +16,5 @@ adminRouter.get('/protected', authenticateAdmin, (req, res) => {
 });
 
 adminRouter.get('/users', authenticateAdmin, getAllUsers);
-// userRouter.get('/:id', getUserById);
 
 export default adminRouter;

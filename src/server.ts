@@ -5,6 +5,7 @@ import userRouter from './routes/user-route';
 import bookRouter from './routes/book-route';
 import adminRouter from './routes/admin-route';
 import userBookRouter from './routes/user-book-route';
+import superAdminRouter from './routes/superadmin-route';
 
 const app = express();
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(express.json());
 
 app.use('/api/user', userRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/superadmin', superAdminRouter);
 app.use('/api/book', bookRouter);
 app.use('/api/userbook', userBookRouter);
 app.listen(PORT, () => {
