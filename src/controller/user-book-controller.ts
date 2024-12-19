@@ -1,14 +1,16 @@
 import { NextFunction, Request, Response } from 'express';
 import UserBook from '../models/userbook-model';
+import { CustomRequest } from '../types/types';
+import { UserModel } from '../models/user-model';
 
 export const addBookToUser = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
+    const { _id: userId } = req.user as UserModel;
     const {
-      userId,
       bookId,
       readProgress = 0,
       status = 'reading',
@@ -112,13 +114,12 @@ export const addBookToUser = async (
 };
 
 export const fetchBookInSelf = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId } = req.params;
-
+    const { _id: userId } = req.user as UserModel;
     const userLibrary = await UserBook.findOne({ user: userId });
 
     if (!userLibrary) {
@@ -144,12 +145,12 @@ export const fetchBookInSelf = async (
 };
 
 export const updateBookProgress = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { _id: userId } = req.user as UserModel;
     const { bookId, readProgress } = req.body;
 
     const userLibrary = await UserBook.findOne({ user: userId });
@@ -177,12 +178,12 @@ export const updateBookProgress = async (
 };
 
 export const updateBookStatus = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { _id: userId } = req.user as UserModel;
     const { bookId, status } = req.body;
 
     const userLibrary = await UserBook.findOne({ user: userId });
@@ -210,12 +211,12 @@ export const updateBookStatus = async (
 };
 
 export const deleteBookFromSelf = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId } = req.params;
+    const { _id: userId } = req.user as UserModel;
     const { bookId } = req.body;
 
     const userLibrary = await UserBook.findOne({ user: userId });
