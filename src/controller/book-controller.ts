@@ -191,7 +191,7 @@ export const fetchSimilarBooks = async (
     const similarBooks = await Book.find({
       $or: [
         { genre: { $in: book.genre } },
-        { rating: { $gte: book.rating - 1, $lte: book.rating + 1 } },
+        //    { rating: { $gte: book.rating - 1, $lte: book.rating + 1 } },
         { author: { $in: book.author } },
       ],
     });

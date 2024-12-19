@@ -18,6 +18,8 @@ export interface UserBook extends Document {
   updatedAt: Date;
   finishedAt?: Date;
 }
+//loaned at
+//identified doubtful based on image ocr
 
 const userBookSchema: Schema<UserBook> = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
