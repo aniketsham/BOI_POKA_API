@@ -114,12 +114,12 @@ export const handleFacebookLogin = async (
         let user = await User.findOne({ email });
 
         if (!user) {
-      // Create a new user if not found
+    
       user = new User({
         fullName: name,
         email,
         profileImage: picture.data.url,
-        userType: 'user', // Adjust based on app logic
+        userType: 'user', 
         isVerified: true,
         socialProvider: [
           {
