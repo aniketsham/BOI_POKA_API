@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import SuperAdmin from '../models/superadmin-model';
 import jwt from 'jsonwebtoken';
+import Admin from '../models/admin-model';
 
 //? Optional Register API Route
 export const registerSuperAdmin = async (
@@ -13,8 +14,8 @@ export const registerSuperAdmin = async (
 
     const existingAdmin = await SuperAdmin.findOne({ email });
     if (existingAdmin) {
-    res.status(400).json({ error: 'SuperAdmin already exists' });
-    return
+      res.status(400).json({ error: 'SuperAdmin already exists' });
+      return;
     }
 
     const superAdmin = new SuperAdmin({
@@ -45,13 +46,13 @@ export const loginSuperAdmin = async (
     const superAdmin = await SuperAdmin.findOne({ email });
     if (!superAdmin) {
       res.status(404).json({ error: 'SuperAdmin not found' });
-      return
+      return;
     }
 
     const isMatch = await superAdmin.comparePassword(password);
     if (!isMatch) {
-    res.status(401).json({ error: 'Invalid credentials' });
-    return
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
     }
     const token = jwt.sign(
       { id: superAdmin._id, role: superAdmin.role },
@@ -63,6 +64,25 @@ export const loginSuperAdmin = async (
       message: 'SuperAdmin logged in successfully',
       token,
       superAdmin,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+//? Get All Admins
+export const getAllAdmins = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const admins = await Admin.find();
+
+    res.status(200).json({
+      message: 'Admins retrieved successfully',
+      admins: admins,
     });
   } catch (error) {
     next(error);
