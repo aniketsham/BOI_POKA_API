@@ -3,7 +3,6 @@ import {
     loginUser,
     registerUser,
     updateUser,
-    deleteUser,
 } from '../controller/user-controller';
 import { registerValidation } from '../validations/validation';
 import { handleFacebookLogin, handleGoogleLogin, handleLinkedinLogin } from '../controller/auth-controller';
@@ -16,6 +15,5 @@ userRouter.post('/google', handleGoogleLogin);
 userRouter.post('/linkedin', handleLinkedinLogin);
 userRouter.post('/facebook', handleFacebookLogin);
 userRouter.put('/update/:userId', updateUser);
-userRouter.delete('/delete/:userId', deleteUser);
 
 export default userRouter;

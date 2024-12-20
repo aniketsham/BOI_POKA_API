@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAdminById, getAllAdmins, loginSuperAdmin, registerSuperAdmin } from '../controller/superadmin-controller';
+import { deleteAdmin, getAdminById, getAllAdmins, loginSuperAdmin, registerSuperAdmin, updateAdminById } from '../controller/superadmin-controller';
 import { authenticateSuperAdmin } from '../middlewares/authenticate-superadmin';
 
 const superAdminRouter = Router();
@@ -14,5 +14,7 @@ superAdminRouter.get('/protected', authenticateSuperAdmin, (req, res) => {
 
 superAdminRouter.get('/admins', authenticateSuperAdmin, getAllAdmins);
 superAdminRouter.get('/admin/:adminId', authenticateSuperAdmin, getAdminById);
+superAdminRouter.put('/admin/update/:adminId', authenticateSuperAdmin, updateAdminById);
+superAdminRouter.delete('/admin/delete/:adminId', authenticateSuperAdmin, deleteAdmin);
 
 export default superAdminRouter;

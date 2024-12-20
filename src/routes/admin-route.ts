@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getAllUsers, getUserById, loginAdmin, registerAdmin, updateUserById } from '../controller/admin-controller';
 import { registerAdminValidator } from '../validations/validation';
 import { authenticateAdmins } from '../middlewares/authenticate-admin';
+import { deleteUser } from '../controller/admin-controller';
 
 const adminRouter = Router();
 
@@ -18,5 +19,6 @@ adminRouter.get('/protected', authenticateAdmins, (req, res) => {
 adminRouter.get('/users', authenticateAdmins, getAllUsers);
 adminRouter.get('/user/:userId', authenticateAdmins, getUserById);
 adminRouter.put('/user/update/:userId', authenticateAdmins, updateUserById);
+adminRouter.delete('/user/delete/:userId', authenticateAdmins, deleteUser);
 
 export default adminRouter;
