@@ -1,8 +1,6 @@
 import { Router } from 'express';
-import { getAllAdmins, loginSuperAdmin, registerSuperAdmin } from '../controller/superadmin-controller';
+import { deleteAdmin, getAdminById, getAllAdmins, loginSuperAdmin, registerSuperAdmin, updateAdminById } from '../controller/superadmin-controller';
 import { authenticateSuperAdmin } from '../middlewares/authenticate-superadmin';
-import { getAllUsers } from '../controller/admin-controller';
-import { authenticateAdmins } from '../middlewares/authenticate-admin';
 
 const superAdminRouter = Router();
 superAdminRouter.post('/register', registerSuperAdmin);
@@ -14,7 +12,9 @@ superAdminRouter.get('/protected', authenticateSuperAdmin, (req, res) => {
   });
 });
 
-superAdminRouter.get('/users', authenticateAdmins, getAllUsers);
 superAdminRouter.get('/admins', authenticateSuperAdmin, getAllAdmins);
+superAdminRouter.get('/admin/:adminId', authenticateSuperAdmin, getAdminById);
+superAdminRouter.put('/admin/update/:adminId', authenticateSuperAdmin, updateAdminById);
+superAdminRouter.delete('/admin/delete/:adminId', authenticateSuperAdmin, deleteAdmin);
 
 export default superAdminRouter;
