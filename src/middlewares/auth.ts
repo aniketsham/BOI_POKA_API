@@ -9,7 +9,7 @@ export const isAuthenticated = async (
   next: NextFunction
 ) => {
   const token = req.body.token;
-  console.log(token);
+
   if (!token) {
     res.status(401).json({
       error: 'No token provided, access denied, Please login',
@@ -30,7 +30,7 @@ export const isAuthenticated = async (
       return;
     }
     req.user = user;
-    console.log(req.user);
+
     next();
   } catch (error) {
     res.status(401).json({ error: 'Invalid or expired token' });
