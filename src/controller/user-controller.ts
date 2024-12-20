@@ -12,7 +12,10 @@ export const registerUser = async (
   try {
     const { fullName, email, mobileNumber, password, userType } = req.body;
 
-    const existingUserByMobile = await User.findOne({ mobileNumber });
+    const existingUserByMobile = await User.findOne({
+      mobileNumber,
+      isDeleted: false, 
+    });
 
     if (existingUserByMobile) {
       res
@@ -20,7 +23,7 @@ export const registerUser = async (
         .json({ error: 'User already exists with this mobile Number' });
       return;
     }
-    const existingUserByEmail = await User.findOne({ email });
+    const existingUserByEmail = await User.findOne({ email, isDeleted: false });
 
     if (existingUserByEmail) {
       res
@@ -63,17 +66,14 @@ export const loginUser = async (
     const { mobileNumber, password } = req.body;
 
     const user = await User.findOne({ mobileNumber });
-    // console.log(user)
 
     if (!user) {
-    //   console.log('User not found with mobile number:', mobileNumber);
       res.status(400).json({ error: 'Invalid mobile number or password' });
       return;
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-    //   console.log('Invalid password for mobile number:', mobileNumber);
       res.status(400).json({ error: 'Invalid mobile number or password' });
       return;
     }
@@ -99,42 +99,6 @@ export const loginUser = async (
   }
 };
 
-//? Get All users route
-/*
-export const getAllUsers = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const users = await User.find();
-    res.status(200).json(users);
-  } catch (error) {
-    next(error); 
-  }
-};
-*/
-
-//? Get user by id
-/*
-export const getUserById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-     res.status(404).json({ error: 'User not found' });
-     return
-    }
-        
-    res.status(200).json(user);
-  } catch (err) {
-    next(err); 
-  }
-};
-*/
 
 //? Update a user
 
