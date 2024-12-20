@@ -21,18 +21,10 @@ export const authenticateSuperAdmin = async (
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    const { id } = decoded as { id: string };
+    const { role } = decoded as { role: string };
 
-    const user = await SuperAdmin.findOne({
-      _id: id,
-    });
 
-    if (!user) {
-      res.status(401).json({ error: 'Invalid or expired token' });
-      return;
-    }
-
-    if (user.role !== 'SuperAdmin') {
+    if (role !== 'SuperAdmin') {
       res.status(400).json({ error: 'Restricted Access' });
       return;
     }

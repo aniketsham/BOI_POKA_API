@@ -63,7 +63,12 @@ export const loginSuperAdmin = async (
     res.status(200).json({
       message: 'SuperAdmin logged in successfully',
       token,
-      superAdmin,
+      superAdmin: {
+        id: superAdmin._id,
+        fullName: superAdmin.fullName,
+        email: superAdmin.email,
+        role: superAdmin.role,
+      },
     });
   } catch (error) {
     next(error);

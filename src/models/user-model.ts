@@ -27,8 +27,8 @@ export interface UserModel extends Document {
   isVerified: boolean;
 
   isDeleted: boolean;
-  deletedAt?: Date;
-  deletedBy?: string;
+  deletedAt?: Date | null;
+  deletedBy?: string | null;
 
   notificationToken: string;
   favourites: string[];
@@ -46,7 +46,7 @@ const userSchema: Schema<UserModel> = new mongoose.Schema({
       return !this.socialProvider || this.socialProvider.length === 0;
     },
   },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true },
   password: {
     type: String,
     required: function () {
