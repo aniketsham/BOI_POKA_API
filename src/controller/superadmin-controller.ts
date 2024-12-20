@@ -75,7 +75,6 @@ export const loginSuperAdmin = async (
   }
 };
 
-
 //? Get All Admins
 export const getAllAdmins = async (
   req: Request,
@@ -88,6 +87,28 @@ export const getAllAdmins = async (
     res.status(200).json({
       message: 'Admins retrieved successfully',
       admins: admins,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+//? Get Admin By Id
+export const getAdminById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const adminId = req.params.adminId;
+    const admin = await Admin.findById(adminId);
+    if (!admin || admin.isDeleted) {
+      res.status(404).json({ error: 'Admin not found' });
+      return;
+    }
+    res.status(200).json({
+      message: 'Admin retrieved successfully',
+      admin,
     });
   } catch (error) {
     next(error);

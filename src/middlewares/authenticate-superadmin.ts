@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import SuperAdmin from '../models/superadmin-model';
 
 export const authenticateSuperAdmin = async (
   req: Request,

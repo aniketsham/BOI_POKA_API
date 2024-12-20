@@ -8,6 +8,7 @@ export interface Admin extends Document {
   password: string;
   role: string;
   isActive: boolean;
+  isDeleted: boolean;
   verifiedBy: string;
   isVerified: boolean;
   createdAt: Date;
@@ -26,6 +27,7 @@ const adminSchema: Schema<Admin> = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, required: true, default: 'Admin' },
   isActive: { type: Boolean, default: true },
+  isDeleted: {type: Boolean, default: false},
   verifiedBy: { type: String },
   isVerified: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },

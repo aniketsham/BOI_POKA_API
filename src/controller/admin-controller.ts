@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Admin from '../models/admin-model';
 import jwt from 'jsonwebtoken';
 import User from '../models/user-model';
+import bcrypt from 'bcrypt';
 
 export const registerAdmin = async (
   req: Request,
@@ -85,7 +86,6 @@ export const getAllUsers = async (
     try {
       const users = await User.find();
 
-
       res.status(200).json({
         message: 'Users retrieved successfully',
         users: users, 
@@ -93,4 +93,59 @@ export const getAllUsers = async (
     } catch (error) {
       next(error); 
     }
+};
+
+export const getUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId);
+    if (!user || user.isDeleted) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.status(200).json({
+      message: 'User retrieved successfully',
+      user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const updateData = req.body;
+
+    if (updateData.password) {
+      const hashedPassword = await bcrypt.hash(updateData.password, 10);
+      updateData.password = hashedPassword;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { ...updateData, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'User updated successfully',
+      user: updatedUser,
+    });
+  } catch (err) {
+    next(err);
+  }
 };

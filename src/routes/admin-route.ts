@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllUsers, loginAdmin, registerAdmin } from '../controller/admin-controller';
+import { getAllUsers, getUserById, loginAdmin, registerAdmin, updateUserById } from '../controller/admin-controller';
 import { registerAdminValidator } from '../validations/validation';
 import { authenticateAdmins } from '../middlewares/authenticate-admin';
 
@@ -16,5 +16,7 @@ adminRouter.get('/protected', authenticateAdmins, (req, res) => {
 });
 
 adminRouter.get('/users', authenticateAdmins, getAllUsers);
+adminRouter.get('/user/:userId', authenticateAdmins, getUserById);
+adminRouter.put('/user/update/:userId', authenticateAdmins, updateUserById);
 
 export default adminRouter;
