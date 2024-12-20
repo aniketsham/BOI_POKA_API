@@ -16,7 +16,7 @@ export interface UserModel extends Document {
   role: string;
   genre: string[];
   friends: string[];
-
+  innerCircle: string[];
   createdAt: Date;
   updatedAt: Date;
 
@@ -53,6 +53,7 @@ const userSchema: Schema<UserModel> = new mongoose.Schema({
       return !this.socialProvider || this.socialProvider.length === 0;
     },
   },
+  innerCircle: [{ type: String }],
   userType: { type: String, required: true },
   role: { type: String, required: false, default: 'User' },
   genre: [{ type: String }],

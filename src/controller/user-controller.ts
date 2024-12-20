@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import User from '../models/user-model';
+import User, { UserModel } from '../models/user-model';
 import bcrypt from 'bcrypt';
+import { CustomRequest } from '../types/types';
 import jwt from 'jsonwebtoken';
 
 //? Register a user
@@ -14,7 +15,7 @@ export const registerUser = async (
 
     const existingUserByMobile = await User.findOne({
       mobileNumber,
-      isDeleted: false, 
+      isDeleted: false,
     });
 
     if (existingUserByMobile) {
@@ -26,9 +27,7 @@ export const registerUser = async (
     const existingUserByEmail = await User.findOne({ email, isDeleted: false });
 
     if (existingUserByEmail) {
-      res
-        .status(400)
-        .json({ error: 'User already exists with this Email' });
+      res.status(400).json({ error: 'User already exists with this Email' });
       return;
     }
 
@@ -55,7 +54,6 @@ export const registerUser = async (
   }
 };
 
-
 //? Login user
 export const loginUser = async (
   req: Request,
@@ -80,42 +78,40 @@ export const loginUser = async (
 
     const token = jwt.sign(
       { id: user._id, mobileNumber: user.mobileNumber },
-      process.env.JWT_SECRET as string, 
+      process.env.JWT_SECRET as string,
       { expiresIn: '1h' }
     );
 
     res.status(200).json({
       message: 'Login successful',
-      token, 
+      token,
       user: {
         id: user._id,
         fullName: user.fullName,
         mobileNumber: user.mobileNumber,
       },
     });
-    return
+    return;
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
-
 
 //? Update a user
 
 export const updateUser = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId } = req.params; 
-    // console.log(userId);
+    const { _id: userId } = req.user as UserModel;
 
     const updateData = req.body;
 
     if (updateData.password) {
       const hashedPassword = await bcrypt.hash(updateData.password, 10);
-      updateData.password = hashedPassword; 
+      updateData.password = hashedPassword;
     }
 
     const updatedUser = await User.findByIdAndUpdate(
