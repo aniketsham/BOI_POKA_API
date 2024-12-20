@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import Book from '../models/book-model';
+import axios from 'axios';
 // export const addBook = async (
 //   req: Request,
 //   res: Response,
@@ -68,7 +69,6 @@ export const handleBook = async (
       throw new Error('No books found in the response');
     }
 
-    // Process each book and check for existing ISBN
     const savedBooks = await Promise.all(
       books.map(async (book: any) => {
         const { volumeInfo } = book;
@@ -231,14 +231,14 @@ export const fetchFilteredBooks = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { genre, rating, limit } = req.query;
+    const { genre, rating, author, limit } = req.query;
 
     const filter: any = {};
 
     if (genre) {
       const genres = Array.isArray(genre) ? genre : [genre];
       filter.genre = {
-        $in: genres.map((g) => new RegExp(`^${g}$`, 'i')), // Case-insensitive matching
+        $in: genres.map((g) => new RegExp(`\\b${g}\\b`, 'i')), // Use word boundaries to match exact words
       };
     }
 
@@ -246,9 +246,16 @@ export const fetchFilteredBooks = async (
       filter.rating = { $gte: parseFloat(rating as string) };
     }
 
+    if (author) {
+      const authors = Array.isArray(author) ? author : [author];
+      filter.author = {
+        $in: authors.map((a) => new RegExp(`\\b${a}\\b`, 'i')), // Use word boundaries to match exact words
+      };
+    }
+
     const books = await Book.find(filter)
       .sort({ createdAt: -1 })
-      .limit(limit ? parseInt(limit as string, 10) : 10); // Default limit to 10 if not provided
+      .limit(limit ? parseInt(limit as string, 10) : 10);
 
     if (!books.length) {
       res.status(404).json({ error: 'No books found matching the criteria' });
@@ -268,14 +275,69 @@ export const fetchBookByISBN = async (
 ): Promise<void> => {
   try {
     const isbn = req.params.isbn;
-    const book = await Book.findOne({
+    let book = await Book.findOne({
       ISBN: { $in: isbn },
     });
+
     if (!book) {
-      res.status(404).json({ error: 'Book not found' });
+      // Call Google Books API
+      const googleBooksApiUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`;
+      const googleBooksResponse = await axios.get(googleBooksApiUrl);
+
+      if (googleBooksResponse.data.totalItems === 0) {
+        res.status(404).json({ error: 'Book not found' });
+        return;
+      }
+
+      const googleBook = googleBooksResponse.data.items[0].volumeInfo;
+      const isbnArray = googleBook.industryIdentifiers.map(
+        (identifier: any) => identifier.identifier
+      );
+      book = new Book({
+        title: googleBook.title,
+        author: googleBook.authors,
+        ISBN: isbnArray,
+        publicationYear: parseInt(googleBook.publishedDate, 10),
+        publishedDate: googleBook.publishedDate,
+        description: googleBook.description,
+        genre: googleBook.categories || [],
+        coverImage: googleBook.imageLinks?.thumbnail || '',
+        language: googleBook.language ? [googleBook.language] : [],
+        rating: googleBook.averageRating || 0.5,
+      });
+
+      await book.save();
+    }
+
+    res.status(200).json(book);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const fetchSearchResult = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const searchQuery = req.params.searchQuery;
+    const books = await Book.find({
+      $or: [
+        { title: { $regex: searchQuery, $options: 'i' } },
+        { author: { $regex: searchQuery, $options: 'i' } },
+        { genre: { $regex: searchQuery, $options: 'i' } },
+      ],
+    });
+
+    if (books.length === 0) {
+      res
+        .status(404)
+        .json({ error: 'No books found for the given search query' });
       return;
     }
-    res.status(200).json(book);
+
+    res.status(200).json(books);
   } catch (error) {
     next(error);
   }

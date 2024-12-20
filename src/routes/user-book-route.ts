@@ -1,29 +1,46 @@
 import { Router } from 'express';
 import {
   addBookToUser,
-  deleteBookFromSelf,
-  fetchBookInSelf,
+  deleteBookFromAllLibrary,
+  fetchAllBook,
+  fetchBookInShelf,
   updateBookProgress,
   updateBookStatus,
+  fetchBooksAtLocation,
+  fetchBookByLibraryName,
+  deleteBookFromLibrary,
+  addColorToBook,
+  fetchBooksByColor,
 } from '../controller/user-book-controller';
 import { isAuthenticated } from '../middlewares/auth';
 const userBookRouter = Router();
 
-userBookRouter.get('/getAllbooks/:userId', isAuthenticated, fetchBookInSelf);
-userBookRouter.post('/addBook', addBookToUser);
-userBookRouter.put(
-  '/updateBookProgress/:userId',
+userBookRouter.get('/getAllbooks', isAuthenticated, fetchAllBook);
+userBookRouter.get('/fetchBookFromShelf', isAuthenticated, fetchBookInShelf);
+userBookRouter.get(
+  '/fetchBooksAtLocation',
   isAuthenticated,
-  updateBookProgress
+  fetchBooksAtLocation
 );
-userBookRouter.put(
-  '/updateBookStatus/:userId',
+userBookRouter.get(
+  '/fetchByLibraryName/:libraryName',
   isAuthenticated,
-  updateBookStatus
+  fetchBookByLibraryName
+);
+userBookRouter.get('/fetchBooksByColor', isAuthenticated, fetchBooksByColor);
+
+userBookRouter.post('/addBook', isAuthenticated, addBookToUser);
+userBookRouter.post('/addColorToBook', isAuthenticated, addColorToBook);
+userBookRouter.put('/updateBookProgress', isAuthenticated, updateBookProgress);
+userBookRouter.put('/updateBookStatus', isAuthenticated, updateBookStatus);
+userBookRouter.delete(
+  '/deleteBookFromAll',
+  isAuthenticated,
+  deleteBookFromAllLibrary
 );
 userBookRouter.delete(
-  '/deleteBook/:userId',
+  '/deleteBookFromLibrary',
   isAuthenticated,
-  deleteBookFromSelf
+  deleteBookFromLibrary
 );
 export default userBookRouter;
