@@ -22,7 +22,7 @@ export const createInnerCircle = async (
             members: [
                 {
                     userId,
-                    role: "Admin",
+                    role: "ICAdmin",
                     createdBy: userId,
                     addedBy: userId
                 }
