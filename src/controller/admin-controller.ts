@@ -10,7 +10,7 @@ export const registerAdmin = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { fullName, email, mobileNumber, password } = req.body;
+    const { fullName, email, mobileNumber, password, accessTo } = req.body;
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
       res.status(400).json({ error: 'Admin already exists' });
@@ -21,6 +21,7 @@ export const registerAdmin = async (
       email,
       mobileNumber,
       password,
+      accessTo,
     });
     await newAdmin.save();
 
@@ -83,16 +84,16 @@ export const getAllUsers = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-    try {
-      const users = await User.find();
+  try {
+    const users = await User.find();
 
-      res.status(200).json({
-        message: 'Users retrieved successfully',
-        users: users, 
-      });
-    } catch (error) {
-      next(error); 
-    }
+    res.status(200).json({
+      message: 'Users retrieved successfully',
+      users: users,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getUserById = async (
@@ -109,7 +110,7 @@ export const getUserById = async (
     }
     res.status(200).json({
       message: 'User retrieved successfully',
-      user
+      user,
     });
   } catch (error) {
     next(error);
@@ -150,7 +151,6 @@ export const updateUserById = async (
   }
 };
 
-
 //? Delete a user
 
 export const deleteUser = async (
@@ -160,7 +160,7 @@ export const deleteUser = async (
 ): Promise<void> => {
   try {
     const { userId } = req.params;
-    const { deletedBy } = req.body; 
+    const { deletedBy } = req.body;
 
     if (!deletedBy) {
       res.status(400).json({ error: 'deletedBy is required' });
@@ -170,15 +170,15 @@ export const deleteUser = async (
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
-        isDeleted: true, 
-        isActive: false, 
-        deletedAt: new Date(), 
-        deletedBy: deletedBy, 
-        deactivatedAt: new Date(), 
-        deactivatedBy: deletedBy, 
-        updatedAt: new Date(), 
+        isDeleted: true,
+        isActive: false,
+        deletedAt: new Date(),
+        deletedBy: deletedBy,
+        deactivatedAt: new Date(),
+        deactivatedBy: deletedBy,
+        updatedAt: new Date(),
       },
-      { new: true, runValidators: true } 
+      { new: true, runValidators: true }
     );
     if (!updatedUser) {
       res.status(404).json({ error: 'User not found' });
@@ -189,8 +189,8 @@ export const deleteUser = async (
     // if (!deletedUser) {
     //     res.status(404).json({ error: 'User not found' });
     //     return
-    // } 
-        
+    // }
+
     res.status(200).json({
       message: 'User marked as deleted successfully',
       user: updatedUser,
@@ -199,4 +199,3 @@ export const deleteUser = async (
     next(err);
   }
 };
-

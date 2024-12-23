@@ -97,8 +97,6 @@ export const loginUser = async (
   }
 };
 
-//? Update a user
-
 export const updateUser = async (
   req: CustomRequest,
   res: Response,
