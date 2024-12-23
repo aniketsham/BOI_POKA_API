@@ -21,7 +21,6 @@ import { fetchAllUserBook } from '../controller/user-book-controller';
 import { registerAdminValidator } from '../validations/validation';
 import { deleteUser } from '../controller/admin-controller';
 import { isAuthenticated } from '../middlewares/auth';
-
 import { accessControl } from '../middlewares/access-control';
 
 const adminRouter = Router();
