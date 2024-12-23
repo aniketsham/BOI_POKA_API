@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import User, { UserModel } from '../models/user-model';
 import bcrypt from 'bcrypt';
 import { CustomRequest } from '../types/types';
+import innerCircle from '../models/inner-circle';
 import jwt from 'jsonwebtoken';
 
 //? Register a user
@@ -130,5 +131,39 @@ export const updateUser = async (
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const fetchInvites = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+
+    const user = await User.findById(userId).select('invites');
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const circleDetails = await innerCircle
+      .find({
+        _id: { $in: user.invites },
+      })
+      .select('circleName circleDescription circleGenre members');
+
+    const invites = circleDetails.map((circle) => ({
+      circleId: circle._id,
+      circleName: circle.circleName,
+      circleDescription: circle.circleDescription,
+      circleGenre: circle.circleGenre,
+      members: circle.members,
+    }));
+
+    res.status(200).json({ invites });
+  } catch (error) {
+    next(error);
   }
 };
