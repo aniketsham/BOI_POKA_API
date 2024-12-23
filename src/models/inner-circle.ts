@@ -13,6 +13,7 @@ interface Member {
 export interface InnerCircleInterface extends Document {
     userId: mongoose.Schema.Types.ObjectId;
     circleName: string;
+    circleDescription: string;
     circleGenre: string[]
     members: Member[];
     ISBN: mongoose.Schema.Types.ObjectId;
@@ -31,6 +32,7 @@ const MemberSchema: Schema = new Schema({
 const InnerCircleSchema: Schema = new Schema({
     userId: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
     circleName: {type: String, required: true},
+    circleDescription: {type: String, required: true},
     circleGenre: {type: [String], required: true},
     members: {type: [MemberSchema], required: true},
     ISBN: {type: mongoose.Schema.Types.ObjectId, ref: "UserBook", required: true}
