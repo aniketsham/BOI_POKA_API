@@ -10,11 +10,10 @@ import {
   fetchBookByLibraryName,
   deleteBookFromLibrary,
   addColorToBook,
-  fetchAllUserBook,
   fetchBooksByColor,
 } from '../controller/user-book-controller';
 import { isAuthenticated } from '../middlewares/auth';
-import { accessControl } from '../middlewares/access-control';
+
 const userBookRouter = Router();
 
 userBookRouter.get('/getAllbooks', isAuthenticated, fetchAllBook);
@@ -46,10 +45,4 @@ userBookRouter.delete(
   deleteBookFromLibrary
 );
 
-userBookRouter.get(
-  '/fetchAllUserBook',
-  isAuthenticated,
-  accessControl('getUserBook'),
-  fetchAllUserBook
-);
 export default userBookRouter;
