@@ -1,32 +1,33 @@
-import { Request, Response, NextFunction } from "express";
+import {  Response, NextFunction } from "express";
 import InnerCircle from "../models/inner-circle";
-import mongoose from "mongoose";
+import { UserModel } from "../models/user-model";
+import { CustomRequest } from "../types/types";
 
 export const createInnerCircle = async (
-    req: Request,
+    req: CustomRequest,
     res: Response,
     next: NextFunction
 ) => {
     try{
-        const {userId, circleName, circleGenre, ISBN} = req.body;
-        if(!userId || !circleName || !circleGenre || !ISBN){
+        const {_id:userId}= req.user  as UserModel;
+        const {circleName, circleGenre, ISBN} = req.body;
+        if(!userId || !circleName || !circleGenre){
             res.status(400).json({error: "Please provide all the required fields"});
             return;
         }
 
         const newInnerCircle = new InnerCircle({
-            userId: mongoose.Schema.Types.ObjectId,
             circleName,
             circleGenre,
             members: [
                 {
-                    userId: mongoose.Types.ObjectId,
+                    userId,
                     role: "Admin",
                     createdBy: userId,
                     addedBy: userId
                 }
             ],
-            ISBN: mongoose.Types.ObjectId
+            ISBN
         })
 
         const savedInnerCircle = await newInnerCircle.save();
