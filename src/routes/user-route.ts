@@ -3,6 +3,7 @@ import {
   loginUser,
   registerUser,
   updateUser,
+  fetchInvites,
 } from '../controller/user-controller';
 import { registerValidation } from '../validations/validation';
 import {
@@ -19,5 +20,6 @@ userRouter.post('/google', handleGoogleLogin);
 userRouter.post('/linkedin', handleLinkedinLogin);
 userRouter.post('/facebook', handleFacebookLogin);
 userRouter.put('/update', updateUser);
+userRouter.get('/fetchInvites', fetchInvites);
 
 export default userRouter;
