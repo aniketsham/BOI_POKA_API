@@ -811,3 +811,20 @@ export const fetchBooksByColor = async (
     next(error);
   }
 };
+
+export const fetchAllUserBook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userBook = await UserBook.find();
+
+    res.status(200).json({
+      message: 'UserBook retrieved successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

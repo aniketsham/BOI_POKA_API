@@ -15,6 +15,7 @@ export interface Admin extends Document {
   updatedAt: Date;
   deactivatedBy?: string;
   deactivatedAt?: Date;
+  accessTo: string[];
   deletedAt?: Date;
   deletedBy?: string;
   comparePassword(enteredPassword: string): Promise<boolean>;
@@ -26,8 +27,9 @@ const adminSchema: Schema<Admin> = new mongoose.Schema({
   mobileNumber: { type: String, required: true },
   password: { type: String, required: true },
   role: { type: String, required: true, default: 'Admin' },
+  accessTo: [{ type: String }],
   isActive: { type: Boolean, default: true },
-  isDeleted: {type: Boolean, default: false},
+  isDeleted: { type: Boolean, default: false },
   verifiedBy: { type: String },
   isVerified: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
@@ -44,7 +46,6 @@ adminSchema.pre('save', async function (next) {
   }
   next();
 });
-
 
 adminSchema.methods.comparePassword = function (
   enteredPassword: string
