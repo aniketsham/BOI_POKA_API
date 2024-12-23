@@ -3,7 +3,8 @@ import Admin from '../models/admin-model';
 import jwt from 'jsonwebtoken';
 import User from '../models/user-model';
 import bcrypt from 'bcrypt';
-
+import Book from '../models/book-model';
+import UserBook from '../models/userbook-model';
 export const registerAdmin = async (
   req: Request,
   res: Response,
@@ -151,8 +152,6 @@ export const updateUserById = async (
   }
 };
 
-//? Delete a user
-
 export const deleteUser = async (
   req: Request,
   res: Response,
@@ -184,12 +183,6 @@ export const deleteUser = async (
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    //? we no longer need delete functionality
-    // const deletedUser = await User.findByIdAndDelete(userId);
-    // if (!deletedUser) {
-    //     res.status(404).json({ error: 'User not found' });
-    //     return
-    // }
 
     res.status(200).json({
       message: 'User marked as deleted successfully',
@@ -197,5 +190,155 @@ export const deleteUser = async (
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const getAllBooks = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const books = await Book.find();
+    res.status(200).json({
+      message: 'Books retrieved successfully',
+      books,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const updateUserBookProgress = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const { bookId, readProgress } = req.body;
+
+    if (!bookId || readProgress === undefined) {
+      res.status(400).json({ message: 'Book ID and progress are required' });
+      return;
+    }
+
+    const userBook = await UserBook.findOneAndUpdate(
+      { userId, bookId },
+      { readProgress },
+      { new: true }
+    );
+
+    if (!userBook) {
+      res.status(404).json({ message: 'User book not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Book progress updated successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const updateUserBookStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const { bookId, status } = req.body;
+
+    if (!bookId || !status) {
+      res.status(400).json({ message: 'Book ID and status are required' });
+      return;
+    }
+
+    const userBook = await UserBook.findOneAndUpdate(
+      { userId, bookId },
+      { status },
+      { new: true }
+    );
+
+    if (!userBook) {
+      res.status(404).json({ message: 'User book not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Book status updated successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteBookFromUserBook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const { bookId, libraryName } = req.body;
+
+    if (!bookId || !libraryName) {
+      res
+        .status(400)
+        .json({ message: 'Book ID and library name are required' });
+      return;
+    }
+
+    const userBook = await UserBook.findOneAndDelete({
+      userId,
+      bookId,
+      libraryName,
+    });
+
+    if (!userBook) {
+      res
+        .status(404)
+        .json({ message: 'User book not found in the specified library' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Book deleted successfully from the user library',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUserLibrary = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const { libraryName } = req.body;
+
+    if (!libraryName) {
+      res.status(400).json({ message: 'Library name is required' });
+      return;
+    }
+
+    const userBook = await UserBook.deleteMany({ userId, libraryName });
+
+    if (!userBook) {
+      res.status(404).json({ message: 'User library not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'User library deleted successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
   }
 };

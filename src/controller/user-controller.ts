@@ -77,7 +77,7 @@ export const loginUser = async (
     }
 
     const token = jwt.sign(
-      { id: user._id, mobileNumber: user.mobileNumber },
+      { id: user._id, mobileNumber: user.mobileNumber, role: user.role },
       process.env.JWT_SECRET as string,
       { expiresIn: '1h' }
     );
@@ -89,6 +89,7 @@ export const loginUser = async (
         id: user._id,
         fullName: user.fullName,
         mobileNumber: user.mobileNumber,
+        role: user.role,
       },
     });
     return;
