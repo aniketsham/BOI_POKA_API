@@ -21,10 +21,6 @@ import { fetchAllUserBook } from '../controller/user-book-controller';
 import { registerAdminValidator } from '../validations/validation';
 import { deleteUser } from '../controller/admin-controller';
 import { isAuthenticated } from '../middlewares/auth';
-<<<<<<<<< Temporary merge branch 1
-=========
-
->>>>>>>>> Temporary merge branch 2
 import { accessControl } from '../middlewares/access-control';
 
 const adminRouter = Router();
