@@ -89,35 +89,35 @@ adminRouter.get(
 adminRouter.put(
   '/updateUserBookProgress/:userId',
   isAuthenticated,
-  accessControl('updateUserBook'),
+  accessControl('updateUserBooks'),
   updateUserBookProgress
 );
 
 adminRouter.put(
   '/updateUserBookStatus/:userId',
   isAuthenticated,
-  accessControl('updateUserBook'),
+  accessControl('updateUserBooks'),
   updateUserBookStatus
 );
 
 adminRouter.delete(
   '/deleteUserBook/:userId',
   isAuthenticated,
-  accessControl('deleteUserBook'),
+  accessControl('deleteUserBooks'),
   deleteBookFromUserBook
 );
 
 adminRouter.delete(
   '/deleteLibrary/:userId',
   isAuthenticated,
-  accessControl('deleteUserBook'),
+  accessControl('deleteUserBooks'),
   deleteUserLibrary
 );
 
 adminRouter.get(
   '/fetchAllUserBook',
   isAuthenticated,
-  accessControl('getUserBook'),
+  accessControl('getUserBooks'),
   fetchAllUserBook
 );
 export default adminRouter;

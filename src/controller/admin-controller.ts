@@ -208,6 +208,58 @@ export const getAllBooks = async (
     next(error);
   }
 };
+
+export const deleteBookFromUserBook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+    const { libraryName, bookId } = req.body;
+
+    if (!libraryName || !bookId) {
+      res
+        .status(400)
+        .json({ message: 'Library name and book ID are required' });
+      return;
+    }
+
+    // Update query to target any shelf within the library
+    const updatedUserBook = await UserBook.findOneAndUpdate(
+      {
+        user: userId,
+        'libraries.libraryName': libraryName,
+      },
+      {
+        $pull: {
+          'libraries.$[lib].shelves.$[].books': { bookId },
+        },
+      },
+      {
+        arrayFilters: [
+          { 'lib.libraryName': libraryName }, // Match the correct library
+        ],
+        new: true, // Return the updated document
+      }
+    );
+
+    if (!updatedUserBook) {
+      res.status(404).json({
+        message: 'Book not found in any shelf of the specified library',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Book deleted successfully from the user library',
+      userBook: updatedUserBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const updateUserBookProgress = async (
   req: Request,
   res: Response,
@@ -215,17 +267,33 @@ export const updateUserBookProgress = async (
 ): Promise<void> => {
   try {
     const userId = req.params.userId;
-    const { bookId, readProgress } = req.body;
+    const { libraryName, bookId, readProgress } = req.body;
 
-    if (!bookId || readProgress === undefined) {
-      res.status(400).json({ message: 'Book ID and progress are required' });
+    if (!libraryName || !bookId || readProgress === undefined) {
+      res
+        .status(400)
+        .json({ message: 'Library name, book ID, and progress are required' });
       return;
     }
 
     const userBook = await UserBook.findOneAndUpdate(
-      { userId, bookId },
-      { readProgress },
-      { new: true }
+      {
+        user: userId,
+        'libraries.libraryName': libraryName,
+      },
+      {
+        $set: {
+          'libraries.$[lib].shelves.$[].books.$[book].readProgress':
+            readProgress,
+        },
+      },
+      {
+        arrayFilters: [
+          { 'lib.libraryName': libraryName }, // Match library
+          { 'book.bookId': bookId }, // Match book in any shelf
+        ],
+        new: true,
+      }
     );
 
     if (!userBook) {
@@ -241,6 +309,7 @@ export const updateUserBookProgress = async (
     next(error);
   }
 };
+
 export const updateUserBookStatus = async (
   req: Request,
   res: Response,
@@ -248,17 +317,32 @@ export const updateUserBookStatus = async (
 ): Promise<void> => {
   try {
     const userId = req.params.userId;
-    const { bookId, status } = req.body;
+    const { libraryName, bookId, status } = req.body;
 
-    if (!bookId || !status) {
-      res.status(400).json({ message: 'Book ID and status are required' });
+    if (!libraryName || !bookId || !status) {
+      res
+        .status(400)
+        .json({ message: 'Library name, book ID, and status are required' });
       return;
     }
 
     const userBook = await UserBook.findOneAndUpdate(
-      { userId, bookId },
-      { status },
-      { new: true }
+      {
+        user: userId,
+        'libraries.libraryName': libraryName,
+      },
+      {
+        $set: {
+          'libraries.$[lib].shelves.$[].books.$[book].status': status,
+        },
+      },
+      {
+        arrayFilters: [
+          { 'lib.libraryName': libraryName }, // Match library
+          { 'book.bookId': bookId }, // Match book in any shelf
+        ],
+        new: true,
+      }
     );
 
     if (!userBook) {
@@ -268,44 +352,6 @@ export const updateUserBookStatus = async (
 
     res.status(200).json({
       message: 'Book status updated successfully',
-      userBook,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const deleteBookFromUserBook = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const userId = req.params.userId;
-    const { bookId, libraryName } = req.body;
-
-    if (!bookId || !libraryName) {
-      res
-        .status(400)
-        .json({ message: 'Book ID and library name are required' });
-      return;
-    }
-
-    const userBook = await UserBook.findOneAndDelete({
-      userId,
-      bookId,
-      libraryName,
-    });
-
-    if (!userBook) {
-      res
-        .status(404)
-        .json({ message: 'User book not found in the specified library' });
-      return;
-    }
-
-    res.status(200).json({
-      message: 'Book deleted successfully from the user library',
       userBook,
     });
   } catch (error) {
@@ -327,15 +373,23 @@ export const deleteUserLibrary = async (
       return;
     }
 
-    const userBook = await UserBook.deleteMany({ userId, libraryName });
+    const userBook = await UserBook.findOneAndUpdate(
+      { user: userId },
+      {
+        $pull: {
+          libraries: { libraryName }, // Remove library by name
+        },
+      },
+      { new: true }
+    );
 
     if (!userBook) {
-      res.status(404).json({ message: 'User library not found' });
+      res.status(404).json({ message: 'Library not found' });
       return;
     }
 
     res.status(200).json({
-      message: 'User library deleted successfully',
+      message: 'Library deleted successfully',
       userBook,
     });
   } catch (error) {
