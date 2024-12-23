@@ -55,7 +55,7 @@ const userSchema: Schema<UserModel> = new mongoose.Schema({
     },
   },
   innerCircle: [{ type: String }],
-  invites: [{ type: String }],
+  invites: [{ type: mongoose.Schema.Types.ObjectId, ref: "InnerCircle" }],
   userType: { type: String, required: true },
   role: { type: String, required: false, default: 'User' },
   genre: [{ type: String }],
