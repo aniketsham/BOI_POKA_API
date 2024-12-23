@@ -5,10 +5,23 @@ import {
   loginAdmin,
   registerAdmin,
   updateUserById,
+  getAllBooks,
+  updateUserBookProgress,
+  updateUserBookStatus,
+  deleteBookFromUserBook,
+  deleteUserLibrary,
 } from '../controller/admin-controller';
+
+import {
+  fetchBookByAuthor,
+  fetchBookByGenre,
+  fetchBookByISBN,
+} from '../controller/book-controller';
+import { fetchAllUserBook } from '../controller/user-book-controller';
 import { registerAdminValidator } from '../validations/validation';
 import { deleteUser } from '../controller/admin-controller';
 import { isAuthenticated } from '../middlewares/auth';
+
 import { accessControl } from '../middlewares/access-control';
 
 const adminRouter = Router();
@@ -47,4 +60,65 @@ adminRouter.delete(
   deleteUser
 );
 
+adminRouter.get(
+  '/getAllBooks',
+  isAuthenticated,
+  accessControl('getBooks'),
+  getAllBooks
+);
+
+adminRouter.get(
+  '/getBookByISBN/:isbn',
+  isAuthenticated,
+  accessControl('getBooks'),
+  fetchBookByISBN
+);
+
+adminRouter.get(
+  '/getBookByGenre/:genre',
+  isAuthenticated,
+  accessControl('getBooks'),
+  fetchBookByGenre
+);
+adminRouter.get(
+  '/getBookByAuthor/:author',
+  isAuthenticated,
+  accessControl('getBooks'),
+  fetchBookByAuthor
+);
+
+adminRouter.put(
+  '/updateUserBookProgress/:userId',
+  isAuthenticated,
+  accessControl('updateUserBook'),
+  updateUserBookProgress
+);
+
+adminRouter.put(
+  '/updateUserBookStatus/:userId',
+  isAuthenticated,
+  accessControl('updateUserBook'),
+  updateUserBookStatus
+);
+
+adminRouter.delete(
+  '/deleteUserBook/:userId',
+  isAuthenticated,
+  accessControl('deleteUserBook'),
+  deleteBookFromUserBook
+);
+
+adminRouter.delete(
+  '/deleteLibrary/:userId',
+  isAuthenticated,
+  accessControl('deleteUserBook'),
+  deleteUserLibrary
+);
+
+adminRouter.get(
+  '/fetchAllUserBook',
+  isAuthenticated,
+  accessControl('getUserBook'),
+  fetchAllUserBook
+);
 export default adminRouter;
