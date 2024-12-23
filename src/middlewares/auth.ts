@@ -28,6 +28,7 @@ export const isAuthenticated = async (
       });
 
       if (!user) {
+        console.log('user');
         res.status(401).json({ error: 'Invalid or expired token' });
         return;
       }
