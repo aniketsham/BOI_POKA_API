@@ -9,7 +9,6 @@ import {
 import { registerAdminValidator } from '../validations/validation';
 import { deleteUser } from '../controller/admin-controller';
 import { isAuthenticated } from '../middlewares/auth';
-import { access } from 'fs';
 import { accessControl } from '../middlewares/access-control';
 
 const adminRouter = Router();
