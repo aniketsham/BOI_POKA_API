@@ -7,7 +7,9 @@ interface Member {
     createdBy: string;
     addedAt: Date;
     addedBy: mongoose.Schema.Types.ObjectId;
+    inviteStatus: "Accept" | "Pending" | "Reject";
     removedAt?: Date
+    isRemoved: boolean
 }
 
 export interface InnerCircleInterface extends Document {
@@ -16,6 +18,7 @@ export interface InnerCircleInterface extends Document {
     circleDescription: string;
     circleGenre: string[]
     members: Member[];
+
     ISBN: string;
 }
 
@@ -26,7 +29,9 @@ const MemberSchema: Schema = new Schema({
     createdBy: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
     addedAt: {type: Date, default: Date.now},
     addedBy: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
-    removedAt: {type: Date}
+    inviteStatus: {type: String, enum: ["Accept", "Pending", "Reject"], default: "Pending"},
+    removedAt: {type: Date},
+    isRemoved: {type: Boolean, default: false}
 })
 
 const InnerCircleSchema: Schema = new Schema({
