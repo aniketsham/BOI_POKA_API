@@ -280,7 +280,6 @@ export const fetchBookByISBN = async (
     });
 
     if (!book) {
-      // Call Google Books API
       const googleBooksApiUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`;
       const googleBooksResponse = await axios.get(googleBooksApiUrl);
 

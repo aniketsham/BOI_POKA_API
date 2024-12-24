@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { CustomRequest } from '../types/types';
 import innerCircle from '../models/inner-circle';
 import jwt from 'jsonwebtoken';
-
+import mongoose from 'mongoose';
 //? Register a user
 export const registerUser = async (
   req: Request,
@@ -135,7 +135,7 @@ export const updateUser = async (
 };
 
 export const fetchInvites = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -163,6 +163,156 @@ export const fetchInvites = async (
     }));
 
     res.status(200).json({ invites });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const acceptInvitation = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+    const { innerCircleId } = req.body;
+
+    const typedUserId = userId as mongoose.Types.ObjectId;
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    const invitationIndex = user.invites.findIndex((invite) => {
+      return invite.toString() === innerCircleId;
+    });
+
+    if (invitationIndex === -1) {
+      res.status(400).json({ message: 'Invitation not found in user invites' });
+      return;
+    }
+
+    // Remove the invitation from the user's invites list
+    user.invites.splice(invitationIndex, 1);
+    await user.save();
+
+    const InnerCircle = await innerCircle.findById(innerCircleId);
+    if (!InnerCircle) {
+      res.status(404).json({ message: 'Circle not found' });
+      return;
+    }
+
+    // Debugging: Check the userId and member.userId types and values
+    console.log('userId:', userId);
+    InnerCircle.members.forEach((member, index) => {
+      console.log(`member[${index}] userId value:`, member.userId);
+    });
+
+    // Compare as string if .equals() is not working
+    const memberIndex = InnerCircle.members.findIndex((member) => {
+      console.log(
+        'Comparing',
+        typedUserId.toString(),
+        member.userId.toString()
+      );
+      return typedUserId.toString() === member.userId.toString();
+    });
+
+    if (memberIndex !== -1) {
+      // Update the inviteStatus to "Accept" in the InnerCircle members array
+      InnerCircle.members[memberIndex].inviteStatus = 'Accept';
+      InnerCircle.markModified('members'); // Mark the members array as modified
+      await InnerCircle.save();
+    } else {
+      res.status(400).json({ message: 'User is not a member of the circle' });
+      return;
+    }
+
+    // Add the innerCircleId to the user's innerCircle array
+    user.innerCircle.push(innerCircleId);
+    await user.save();
+
+    res.status(200).json({
+      message: 'Invitation accepted successfully',
+      innerCircle: InnerCircle,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const rejectInvitation = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel; // userId is extracted from req.user
+    const { innerCircleId } = req.body;
+
+    // Ensure userId is treated as an ObjectId
+    const typedUserId = userId as mongoose.Types.ObjectId;
+
+    // Find the user
+    const user = await User.findById(typedUserId);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    const invitationIndex = user.invites.findIndex((invite) => {
+      return invite.toString() === innerCircleId;
+    });
+
+    if (invitationIndex === -1) {
+      res.status(400).json({ message: 'Invitation not found in user invites' });
+      return;
+    }
+
+    // Remove the invitation from the user's invites list
+    user.invites.splice(invitationIndex, 1);
+    await user.save();
+
+    const InnerCircle = await innerCircle.findById(innerCircleId);
+    if (!InnerCircle) {
+      res.status(404).json({ message: 'Circle not found' });
+      return;
+    }
+
+    // Debugging: Check the userId and member.userId types and values
+    console.log('typedUserId:', typedUserId);
+    InnerCircle.members.forEach((member, index) => {
+      console.log(`member[${index}] userId value:`, member.userId);
+    });
+
+    // Compare as string if .equals() is not working
+    const memberIndex = InnerCircle.members.findIndex((member) => {
+      // Compare userId and member.userId as strings
+      console.log(
+        'Comparing',
+        typedUserId.toString(),
+        member.userId.toString()
+      );
+      return typedUserId.toString() === member.userId.toString();
+    });
+
+    if (memberIndex !== -1) {
+      // Update the inviteStatus to "Reject"
+      InnerCircle.members[memberIndex].inviteStatus = 'Reject';
+
+      // Mark the members array as modified
+      InnerCircle.markModified('members');
+      await InnerCircle.save();
+    } else {
+      res.status(400).json({ message: 'User is not a member of the circle' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Invitation rejected successfully',
+    });
   } catch (error) {
     next(error);
   }
