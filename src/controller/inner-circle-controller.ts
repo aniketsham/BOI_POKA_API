@@ -8,16 +8,18 @@ export const createInnerCircle = async (
   req: CustomRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const user = req.user as UserModel;
     const { _id: userId } = user;
     const { circleName, circleGenre, ISBN } = req.body;
+
     if (!userId || !circleName || !circleGenre) {
       res.status(400).json({ error: 'Please provide all the required fields' });
       return;
     }
 
+    // Create the new Inner Circle
     const newInnerCircle = new InnerCircle({
       circleName,
       circleGenre,
@@ -34,15 +36,27 @@ export const createInnerCircle = async (
 
     const savedInnerCircle = await newInnerCircle.save();
 
+    // Add the Inner Circle ID to the user's innerCircle array
+    const userUpdate = await User.findByIdAndUpdate(
+      userId,
+      { $push: { innerCircle: savedInnerCircle._id } },
+      { new: true }
+    );
+
+    if (!userUpdate) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
     res.status(201).json({
       message: 'Inner Circle created successfully',
       innerCircle: savedInnerCircle,
+      user: userUpdate,
     });
   } catch (error) {
     next(error);
   }
 };
-
 //? Send Invitation
 
 export const sendInvitation = async (
@@ -75,7 +89,7 @@ export const sendInvitation = async (
     const isAdmin = innerCircle.members.some(
       (member) =>
         member.userId.toString() === userId.toString() &&
-        member.role === 'Admin'
+        member.role === 'ICAdmin'
     );
     if (!isAdmin) {
       res.status(403).json({ error: 'Only admins can send invitations' });
@@ -117,10 +131,9 @@ export const sendInvitation = async (
     innerCircle.members.push({
       userId: inviteeId,
       role: 'Member',
-      createdBy: userId as string,
       addedBy: userId as mongoose.Schema.Types.ObjectId,
-      inviteStatus: 'Pending',
-      createdAt: new Date(),
+      inviteStatus: 'Accept',
+
       addedAt: new Date(),
       isRemoved: false,
     });
