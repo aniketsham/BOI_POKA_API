@@ -138,3 +138,54 @@ export const sendInvitation = async (
     next(error);
   }
 };
+
+export const addGenreToInnerCircle = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { circleId, newGenre } = req.body;
+    const user = req.user as UserModel;
+
+    // Validate the circleId and newGenre
+    if (!circleId || !newGenre) {
+      res.status(400).json({ error: 'Circle ID and new genre are required' });
+      return;
+    }
+
+    // Check if the inner circle exists
+    const innerCircle = await InnerCircle.findById(circleId);
+    if (!innerCircle) {
+      res.status(404).json({ error: 'Inner Circle not found' });
+      return;
+    }
+
+    // Check if the user is an admin of the inner circle
+    const isAdmin = innerCircle.members.some(
+      (member) =>
+        member.userId === user._id &&
+        member.role === 'ICAdmin'
+    );
+    if (!isAdmin) {
+      res.status(403).json({ error: 'Only admins can add genres' });
+      return;
+    }
+
+    // Add the new genre to the circleGenre array if it doesn't already exist
+    if (!innerCircle.circleGenre.includes(newGenre)) {
+      innerCircle.circleGenre.push(newGenre);
+      await innerCircle.save();
+    } else {
+      res.status(400).json({ error: 'Genre already exists in the inner circle' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Genre added successfully',
+      innerCircle,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
