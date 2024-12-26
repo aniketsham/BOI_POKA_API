@@ -2,172 +2,9 @@ import { NextFunction, Request, Response } from 'express';
 import UserBook from '../models/userbook-model';
 import { CustomRequest } from '../types/types';
 import { UserModel } from '../models/user-model';
-
-// export const addBookToUser = async (
-//   req: CustomRequest,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const { _id: userId } = req.user as UserModel;
-//     const {
-//       bookId,
-//       readProgress = 0,
-//       status = 'reading',
-//       libraryName = 'My Library',
-//       location = [],
-//       source: { sourceName = '', sourceType = '' },
-//     } = req.body;
-
-//     if (!location || location.length !== 2) {
-//       res.status(400).json({
-//         message: 'Invalid location format. Expected [shelfIndex, position].',
-//       });
-//       return;
-//     }
-
-//     const [shelfIndex, position] = location;
-
-//     const userBookRecord = await UserBook.findOne({ user: userId });
-
-//     if (!userBookRecord) {
-//       const newUserBook = new UserBook({
-//         user: userId,
-//         libraries: [
-//           {
-//             libraryName,
-//             shelves: [
-//               {
-//                 shelfId: 1,
-//                 books: [
-//                   {
-//                     bookId,
-//                     readProgress,
-//                     status,
-//                     position,
-//                     color: 'default',
-//                     source: {
-//                       sourceName,
-//                       sourceType,
-//                     },
-//                   },
-//                 ],
-//               },
-//             ],
-//           },
-//         ],
-//         addedAt: new Date(),
-//         updatedAt: new Date(),
-//         finishedAt: null,
-//       });
-
-//       await newUserBook.save();
-
-//       res.status(201).json({
-//         message: "Book added to user's list",
-//         newUserBook,
-//       });
-//       return;
-//     }
-
-//     let library = userBookRecord.libraries.find(
-//       (lib) => lib.libraryName === libraryName
-//     );
-
-//     if (!library) {
-//       library = {
-//         libraryName,
-//         shelves: [
-//           {
-//             shelfId: 1,
-//             books: [
-//               {
-//                 bookId,
-//                 readProgress,
-//                 status,
-//                 position,
-//                 color: 'default',
-//                 source: {
-//                   sourceName,
-//                   sourceType,
-//                 },
-//               },
-//             ],
-//           },
-//         ],
-//       };
-//       userBookRecord.libraries.push(library);
-//     }
-
-//     const existingBook = library.shelves
-//       .flatMap((shelf) => shelf.books)
-//       .find((book) => book.bookId.toString() === bookId);
-
-//     if (existingBook) {
-//       existingBook.readProgress = readProgress;
-//       existingBook.status = status;
-//       existingBook.position = position;
-//       existingBook.color = 'updated';
-//       existingBook.source = { sourceName, sourceType };
-
-//       userBookRecord.updatedAt = new Date();
-//       await userBookRecord.save();
-
-//       res.status(200).json({
-//         message: "Book updated in user's list",
-//         userBookRecord,
-//       });
-//       return;
-//     }
-
-//     if (shelfIndex < 0 || shelfIndex >= library.shelves.length) {
-//       res.status(400).json({ message: 'Invalid shelf index.' });
-//       return;
-//     }
-
-//     const shelf = library.shelves[shelfIndex];
-
-//     if (shelf.books.length >= 10) {
-//       res
-//         .status(400)
-//         .json({ message: 'Shelf is full, maximum of 10 books per shelf.' });
-//       return;
-//     }
-
-//     const isOccupied = shelf.books.some((book) => book.position === position);
-
-//     if (isOccupied) {
-//       shelf.books.forEach((book) => {
-//         if (book.position >= position) {
-//           book.position += 1;
-//         }
-//       });
-//     }
-
-//     shelf.books.push({
-//       bookId,
-//       readProgress,
-//       status,
-//       position,
-//       color: 'new',
-//       source: { sourceName, sourceType },
-//     });
-
-//     shelf.books.sort((a, b) => a.position - b.position);
-
-//     userBookRecord.updatedAt = new Date();
-//     await userBookRecord.save();
-
-//     res.status(200).json({
-//       message: "Book added to user's list",
-//       userBookRecord,
-//     });
-//     return;
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
+import BorrowRequest from '../models/borrow-request-model';
+import mongoose from 'mongoose';
+import User from '../models/user-model';
 export const addBookToUser = async (
   req: CustomRequest,
   res: Response,
@@ -196,7 +33,6 @@ export const addBookToUser = async (
     const userBookRecord = await UserBook.findOne({ user: userId });
 
     if (!userBookRecord) {
-      // If the user doesn't have any book record, create a new one
       const newUserBook = new UserBook({
         user: userId,
         libraries: [
@@ -232,12 +68,10 @@ export const addBookToUser = async (
       return;
     }
 
-    // Check if the library exists in the user's record
     let library = userBookRecord.libraries.find(
       (lib) => lib.libraryName === libraryName
     );
 
-    // If library doesn't exist, create a new library
     if (!library) {
       library = {
         libraryName,
@@ -250,27 +84,24 @@ export const addBookToUser = async (
                 readProgress,
                 status,
                 position,
-                color: 'default', // Default color when the book is first added
+                color: 'default',
                 source: { sourceName, sourceType },
               },
             ],
           },
         ],
       };
-      userBookRecord.libraries.push(library); // Add the new library to the user record
+      userBookRecord.libraries.push(library);
     }
 
-    // Check if the book already exists in any of the libraries
     const existingBook = userBookRecord.libraries
       .flatMap((lib) => lib.shelves)
       .flatMap((shelf) => shelf.books)
       .find((book) => book.bookId.toString() === bookId);
 
     if (existingBook) {
-      // If book exists, propagate color from the first occurrence
       const color = existingBook.color || 'default';
 
-      // Update the book in the existing library with the new details
       const shelf = library.shelves[shelfIndex];
       if (!shelf) {
         res.status(400).json({ message: 'Shelf not found.' });
@@ -280,7 +111,6 @@ export const addBookToUser = async (
       const isOccupied = shelf.books.some((book) => book.position === position);
 
       if (isOccupied) {
-        // Shift books with positions >= the new position
         shelf.books.forEach((book) => {
           if (book.position >= position) {
             book.position += 1;
@@ -293,7 +123,7 @@ export const addBookToUser = async (
         readProgress,
         status,
         position,
-        color: color, // Propagate the existing color
+        color: color,
         source: { sourceName, sourceType },
       });
 
@@ -309,7 +139,6 @@ export const addBookToUser = async (
       return;
     }
 
-    // If the book doesn't exist in the library, we need to add it
     if (shelfIndex < 0 || shelfIndex >= library.shelves.length) {
       res.status(400).json({ message: 'Invalid shelf index.' });
       return;
@@ -317,7 +146,6 @@ export const addBookToUser = async (
 
     const shelf = library.shelves[shelfIndex];
 
-    // Ensure there's room on the shelf (max 10 books per shelf)
     if (shelf.books.length >= 10) {
       res
         .status(400)
@@ -325,11 +153,9 @@ export const addBookToUser = async (
       return;
     }
 
-    // Check if the position is already occupied
     const isOccupied = shelf.books.some((book) => book.position === position);
 
     if (isOccupied) {
-      // Shift books with positions >= the new position
       shelf.books.forEach((book) => {
         if (book.position >= position) {
           book.position += 1;
@@ -337,7 +163,6 @@ export const addBookToUser = async (
       });
     }
 
-    // Get the color of the book from other libraries if it exists
     let bookColor = 'default';
     const colorFromOtherLibrary = userBookRecord.libraries
       .flatMap((lib) => lib.shelves)
@@ -348,17 +173,15 @@ export const addBookToUser = async (
       bookColor = colorFromOtherLibrary;
     }
 
-    // Add the new book to the shelf
     shelf.books.push({
       bookId,
       readProgress,
       status,
       position,
-      color: bookColor, // Apply the correct color
+      color: bookColor,
       source: { sourceName, sourceType },
     });
 
-    // Sort the books on the shelf by position
     shelf.books.sort((a, b) => a.position - b.position);
 
     userBookRecord.updatedAt = new Date();
@@ -758,15 +581,13 @@ export const fetchBooksByColor = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { _id: userId } = req.user as UserModel; // Get the user's ID from the request
-    const { color } = req.query; // The color parameter from the query string
-
+    const { _id: userId } = req.user as UserModel;
+    const { color } = req.query;
     if (!color) {
       res.status(400).json({ message: 'Color is required to filter books.' });
       return;
     }
 
-    // Find the user's library
     const userLibrary = await UserBook.findOne({ user: userId });
 
     if (!userLibrary) {
@@ -774,18 +595,15 @@ export const fetchBooksByColor = async (
       return;
     }
 
-    // Filter books by color across all libraries and shelves
     const filteredBooks = userLibrary.libraries
-      .flatMap((library) => library.shelves) // Flatten shelves from all libraries
-      .flatMap((shelf) => shelf.books) // Flatten books from all shelves
-      .filter((book) => book.color === color) // Filter books by the specified color
+      .flatMap((library) => library.shelves)
+      .flatMap((shelf) => shelf.books)
+      .filter((book) => book.color === color)
       .map((book) => {
-        // Add the library name to the book information
         const libraryName = userLibrary.libraries.find((library) =>
           library.shelves.some((shelf) => shelf.books.includes(book))
         )?.libraryName;
 
-        // Return a clean book object with necessary information
         return {
           bookId: book.bookId,
           readProgress: book.readProgress,
@@ -793,11 +611,10 @@ export const fetchBooksByColor = async (
           position: book.position,
           color: book.color,
           source: book.source,
-          libraryName, // Adding the library name to each book
+          libraryName,
         };
       });
 
-    // If no books are found with the specified color
     if (filteredBooks.length === 0) {
       res.status(404).json({ message: `No books found with color: ${color}` });
       return;
@@ -823,6 +640,249 @@ export const fetchAllUserBook = async (
     res.status(200).json({
       message: 'UserBook retrieved successfully',
       userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const makeBorrowRequest = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { bookId, ownerId, requestedUntil } = req.body;
+    const requesterId = req.user?._id as UserModel; // Assuming user ID is available in req.user
+
+    const newRequest = new BorrowRequest({
+      bookId,
+      ownerId,
+      requesterId,
+      requestedUntil,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await newRequest.save();
+    res.status(201).json({ message: 'Borrow request created', newRequest });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const acceptRequest = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+    const request = await BorrowRequest.findById(requestId);
+    if (!request) {
+      res.status(404).json({ message: 'Request not found' });
+      return;
+    }
+
+    if (!request.ownerId.equals(userId)) {
+      res
+        .status(403)
+        .json({ message: 'You are not authorized to accept this request' });
+      return;
+    }
+
+    request.status = 'accepted';
+    request.updatedAt = new Date();
+    await request.save();
+
+    const addBookReq = {
+      user: { _id: request.requesterId },
+      body: {
+        bookId: request.bookId,
+        readProgress: 0,
+        status: 'borrowed',
+        libraryName: 'Borrowed Books',
+        location: [0, 0],
+        source: { sourceName: 'Borrowed', sourceType: 'borrow' },
+      },
+    };
+
+    await addBookToUser(addBookReq as any, res, next);
+
+    res
+      .status(200)
+      .json({ message: 'Request accepted and book added to user' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const rejectRequest = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { requestId } = req.params;
+    const userId = req.user?._id as mongoose.Types.ObjectId; // Assuming user ID is available in req.user
+
+    const request = await BorrowRequest.findById(requestId);
+    if (!request) {
+      res.status(404).json({ message: 'Request not found' });
+      return;
+    }
+
+    if (!request.ownerId.equals(userId)) {
+      res
+        .status(403)
+        .json({ message: 'You are not authorized to reject this request' });
+      return;
+    }
+
+    request.status = 'rejected';
+    request.updatedAt = new Date();
+    await request.save();
+
+    res.status(200).json({ message: 'Request rejected' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllBorrowRequestsByRequester = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+
+    const borrowRequests = await BorrowRequest.find({ requesterId: userId });
+
+    if (borrowRequests.length === 0) {
+      res
+        .status(404)
+        .json({ message: 'No borrow requests found for this user' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Requester Borrow requests retrieved successfully',
+      borrowRequests,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllBorrowRequestsByOwner = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+
+    const borrowRequests = await BorrowRequest.find({ ownerId: userId });
+
+    if (borrowRequests.length === 0) {
+      res
+        .status(404)
+        .json({ message: 'No borrow requests found for this user' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Owner Borrow requests retrieved successfully',
+      borrowRequests,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllBorrowedBooks = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+
+    // Find all borrow requests where the requesterId matches the user ID and status is 'accepted'
+    const borrowRequests = await BorrowRequest.find({
+      requesterId: userId,
+      status: 'accepted',
+    });
+
+    if (borrowRequests.length === 0) {
+      res.status(404).json({ message: 'No borrowed books found' });
+      return;
+    }
+
+    // Retrieve owner details for each borrow request
+    const borrowedBooks = await Promise.all(
+      borrowRequests.map(async (request) => {
+        const owner = await User.findById(request.ownerId).select(
+          'fullName email'
+        );
+        return {
+          bookId: request.bookId,
+          owner: owner
+            ? { fullName: owner.fullName, email: owner.email }
+            : null,
+          requestedUntil: request.requestedUntil,
+        };
+      })
+    );
+
+    res.status(200).json({
+      message: 'Borrowed books retrieved successfully',
+      borrowedBooks,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllLoanedBooks = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+
+    const loanedBooks = await BorrowRequest.find({
+      ownerId: userId,
+      status: 'accepted',
+    });
+
+    if (loanedBooks.length === 0) {
+      res.status(404).json({ message: 'No loaned books found for this user' });
+      return;
+    }
+
+    const loanedBookDetails = await Promise.all(
+      loanedBooks.map(async (request) => {
+        const requester = await User.findById(request.requesterId).select(
+          'fullName email'
+        );
+        return {
+          bookId: request.bookId,
+          requester: requester
+            ? { fullName: requester.fullName, email: requester.email }
+            : null,
+          requestedUntil: request.requestedUntil,
+        };
+      })
+    );
+
+    res.status(200).json({
+      message: 'Loaned books retrieved successfully',
+      loanedBooks: loanedBookDetails,
     });
   } catch (error) {
     next(error);

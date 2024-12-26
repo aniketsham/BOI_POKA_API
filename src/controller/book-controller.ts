@@ -341,3 +341,22 @@ export const fetchSearchResult = async (
     next(error);
   }
 };
+
+export const getBooksAlphabetically = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const books = await Book.find().sort({ title: 1 });
+
+    if (books.length === 0) {
+      res.status(404).json({ message: 'No books found' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Books retrieved successfully', books });
+  } catch (error) {
+    next(error);
+  }
+};
