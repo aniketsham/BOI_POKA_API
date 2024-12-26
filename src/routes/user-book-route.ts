@@ -11,6 +11,13 @@ import {
   deleteBookFromLibrary,
   addColorToBook,
   fetchBooksByColor,
+  makeBorrowRequest,
+  acceptRequest,
+  rejectRequest,
+  getAllBorrowRequestsByRequester,
+  getAllBorrowedBooks,
+  getAllLoanedBooks,
+  getAllBorrowRequestsByOwner,
 } from '../controller/user-book-controller';
 import { isAuthenticated } from '../middlewares/auth';
 
@@ -44,5 +51,35 @@ userBookRouter.delete(
   isAuthenticated,
   deleteBookFromLibrary
 );
+
+userBookRouter.post('/borrow-request', isAuthenticated, makeBorrowRequest);
+
+userBookRouter.post(
+  '/borrow-request/:requestId/accept',
+  isAuthenticated,
+  acceptRequest
+);
+
+userBookRouter.post(
+  '/borrow-request/:requestId/reject',
+  isAuthenticated,
+  rejectRequest
+);
+
+userBookRouter.get(
+  '/borrow-requests/Owner',
+  isAuthenticated,
+  getAllBorrowRequestsByOwner
+);
+
+userBookRouter.get(
+  '/borrow-requests/Requester',
+  isAuthenticated,
+  getAllBorrowRequestsByRequester
+);
+
+userBookRouter.get('/borrowed-books', isAuthenticated, getAllBorrowedBooks);
+
+userBookRouter.get('/loaned-books', isAuthenticated, getAllLoanedBooks);
 
 export default userBookRouter;
