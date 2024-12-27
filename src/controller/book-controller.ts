@@ -351,12 +351,12 @@ export const fetchSearchResult = async (
     });
 
     const newBooks = googleBooks.map((book: any) => new Book(book));
-    await Book.insertMany(newBooks, { session });
+    const books = await Book.insertMany(newBooks, { session });
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(200).json({ books: googleBooks });
+    res.status(200).json({ books });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
