@@ -53,7 +53,6 @@ export const handleGoogleLogin = async (
 
     res.status(200).json({
       message: 'Login successful via Google',
-      user,
     });
   } catch (error) {
     next(error);
@@ -107,12 +106,6 @@ export const handleLinkedinLogin = async (
 
     res.status(200).json({
       message: 'Login successful by LinkedIn',
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        profileImage: user.profileImage,
-      },
     });
   } catch (error) {
     next(error);
@@ -165,12 +158,6 @@ export const handleFacebookLogin = async (
     }
     res.status(200).json({
       message: 'Login successful by Facebook',
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        profileImage: user.profileImage,
-      },
     });
 
     } catch (error) {

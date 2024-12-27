@@ -27,7 +27,6 @@ export const registerSuperAdmin = async (
     await superAdmin.save();
     res.status(201).json({
       message: 'SuperAdmin registered successfully',
-      superAdmin,
     });
   } catch (error) {
     next(error);
@@ -63,12 +62,6 @@ export const loginSuperAdmin = async (
     res.status(200).json({
       message: 'SuperAdmin logged in successfully',
       token,
-      superAdmin: {
-        id: superAdmin._id,
-        fullName: superAdmin.fullName,
-        email: superAdmin.email,
-        role: superAdmin.role,
-      },
     });
   } catch (error) {
     next(error);
@@ -142,7 +135,6 @@ export const updateAdminById = async (
 
     res.status(200).json({
       message: 'Admin updated successfully',
-      admin: updatedAdmin,
     });
   } catch (err) {
     next(err);
@@ -185,7 +177,6 @@ export const deleteAdmin = async (
 
     res.status(200).json({
       message: 'Admin marked as deleted successfully',
-      admin: updatedAdmin,
     });
   } catch (err) {
     next(err);

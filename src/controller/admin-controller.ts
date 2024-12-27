@@ -28,11 +28,6 @@ export const registerAdmin = async (
 
     res.status(201).json({
       message: 'Admin registered successfully',
-      admin: {
-        id: newAdmin._id,
-        fullName: newAdmin.fullName,
-        email: newAdmin.email,
-      },
     });
   } catch (error) {
     next(error);
@@ -67,12 +62,6 @@ export const loginAdmin = async (
     );
     res.status(200).json({
       message: 'Login successful',
-      admin: {
-        id: admin._id,
-        fullName: admin.fullName,
-        email: admin.email,
-        role: admin.role,
-      },
       token,
     });
   } catch (error) {
@@ -145,7 +134,6 @@ export const updateUserById = async (
 
     res.status(200).json({
       message: 'User updated successfully',
-      user: updatedUser,
     });
   } catch (err) {
     next(err);
@@ -186,7 +174,6 @@ export const deleteUser = async (
 
     res.status(200).json({
       message: 'User marked as deleted successfully',
-      user: updatedUser,
     });
   } catch (err) {
     next(err);
@@ -375,7 +362,7 @@ export const deleteUserLibrary = async (
       { user: userId },
       {
         $pull: {
-          libraries: { libraryName }, // Remove library by name
+          libraries: { libraryName },
         },
       },
       { new: true }
