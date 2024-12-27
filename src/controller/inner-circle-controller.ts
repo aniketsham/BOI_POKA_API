@@ -69,7 +69,6 @@ export const createInnerCircle = async (
   }
 };
 
-// filepath: /Users/aniketsharma/Dropbox/Mac/Desktop/BOI_POKA_API/src/controller/inner-circle-controller.ts
 export const sendInvitation = async (
   req: CustomRequest,
   res: Response,
@@ -251,8 +250,6 @@ export const removeUserFromInnerCircle = async (
 
     res.status(200).json({
       message: 'User removed from Inner Circle successfully',
-      innerCircle,
-      user: userUpdate,
     });
   } catch (error) {
     await session.abortTransaction();

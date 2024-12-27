@@ -785,7 +785,6 @@ export const getAllBorrowedBooks = async (
   try {
     const { _id: userId } = req.user as UserModel;
 
-    // Find all borrow requests where the requesterId matches the user ID and status is 'accepted'
     const borrowRequests = await BorrowRequest.find({
       requesterId: userId,
       status: 'accepted',
@@ -796,7 +795,6 @@ export const getAllBorrowedBooks = async (
       return;
     }
 
-    // Retrieve owner details for each borrow request
     const borrowedBooks = await Promise.all(
       borrowRequests.map(async (request) => {
         const owner = await User.findById(request.ownerId).select(
