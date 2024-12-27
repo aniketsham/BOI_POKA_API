@@ -189,11 +189,7 @@ export const fetchSimilarBooks = async (
       return;
     }
     const similarBooks = await Book.find({
-      $or: [
-        { genre: { $in: book.genre } },
-        //    { rating: { $gte: book.rating - 1, $lte: book.rating + 1 } },
-        { author: { $in: book.author } },
-      ],
+      $or: [{ genre: { $in: book.genre } }, { author: { $in: book.author } }],
     });
 
     if (similarBooks.length === 0) {
@@ -337,25 +333,6 @@ export const fetchSearchResult = async (
     }
 
     res.status(200).json(books);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getBooksAlphabetically = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const books = await Book.find().sort({ title: 1 });
-
-    if (books.length === 0) {
-      res.status(404).json({ message: 'No books found' });
-      return;
-    }
-
-    res.status(200).json({ message: 'Books retrieved successfully', books });
   } catch (error) {
     next(error);
   }

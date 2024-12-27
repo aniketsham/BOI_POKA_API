@@ -7,7 +7,6 @@ import {
   fetchFilteredBooks,
   fetchBookByISBN,
   fetchSearchResult,
-  getBooksAlphabetically,
 } from '../controller/book-controller';
 import { isAuthenticated } from '../middlewares/auth';
 
@@ -20,5 +19,4 @@ bookRouter.get('/similarBooks/:id', isAuthenticated, fetchSimilarBooks);
 bookRouter.get('/filteredBooks', isAuthenticated, fetchFilteredBooks);
 bookRouter.get('/ISBN/:isbn', isAuthenticated, fetchBookByISBN);
 bookRouter.get('/search/:searchQuery', isAuthenticated, fetchSearchResult);
-bookRouter.get('/alphabetical', isAuthenticated, getBooksAlphabetically);
 export default bookRouter;
