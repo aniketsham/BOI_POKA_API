@@ -274,42 +274,6 @@ export const updateBookProgress = async (
   }
 };
 
-export const updateBookStatus = async (
-  req: CustomRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const { _id: userId } = req.user as UserModel;
-    const { bookId, status } = req.body;
-
-    const userLibrary = await UserBook.findOne({ user: userId });
-
-    if (!userLibrary) {
-      res.status(404).json({ message: 'User Library not found' });
-      return;
-    }
-
-    const book = userLibrary.libraries
-      .flatMap((library) => library.shelves)
-      .flatMap((shelf) => shelf.books)
-      .find((b) => b.bookId.toString() === bookId);
-
-    if (!book) {
-      res.status(404).json({ message: 'Book not found in user library' });
-      return;
-    }
-
-    book.status = status;
-
-    await userLibrary.save();
-
-    res.status(200).json({ message: 'Book status updated successfully' });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const deleteBookFromAllLibrary = async (
   req: CustomRequest,
   res: Response,
