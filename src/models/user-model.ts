@@ -53,20 +53,21 @@ const userSchema: Schema<UserModel> = new mongoose.Schema({
     required: function () {
       return !this.socialProvider || this.socialProvider.length === 0;
     },
+    select: false,
   },
   innerCircle: [{ type: String }],
-  invites: [{ type: mongoose.Schema.Types.ObjectId, ref: "InnerCircle" }],
+  invites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'InnerCircle' }],
   userType: { type: String, required: true },
   role: { type: String, required: false, default: 'User' },
   genre: [{ type: String }],
   friends: [{ type: String }],
   profileImage: { type: String },
 
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now, select: false },
+  updatedAt: { type: Date, default: Date.now, select: false },
 
-  deactivatedBy: { type: String },
-  deactivatedAt: { type: Date },
+  deactivatedBy: { type: String, select: false },
+  deactivatedAt: { type: Date, select: false },
 
   isActive: { type: Boolean, default: true },
   isVerified: { type: Boolean, default: false },
@@ -75,7 +76,7 @@ const userSchema: Schema<UserModel> = new mongoose.Schema({
   deletedAt: { type: Date },
   deletedBy: { type: String },
 
-  notificationToken: { type: String },
+  notificationToken: { type: String, select: false },
 
   favourites: [{ type: String }],
   socialProvider: [

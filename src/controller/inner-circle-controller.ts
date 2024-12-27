@@ -161,36 +161,32 @@ export const addGenreToInnerCircle = async (
     const { circleId, newGenre } = req.body;
     const user = req.user as UserModel;
 
-    // Validate the circleId and newGenre
     if (!circleId || !newGenre) {
       res.status(400).json({ error: 'Circle ID and new genre are required' });
       return;
     }
 
-    // Check if the inner circle exists
     const innerCircle = await InnerCircle.findById(circleId);
     if (!innerCircle) {
       res.status(404).json({ error: 'Inner Circle not found' });
       return;
     }
 
-    // Check if the user is an admin of the inner circle
     const isAdmin = innerCircle.members.some(
-      (member) =>
-        member.userId === user._id &&
-        member.role === 'ICAdmin'
+      (member) => member.userId === user._id && member.role === 'ICAdmin'
     );
     if (!isAdmin) {
       res.status(403).json({ error: 'Only admins can add genres' });
       return;
     }
 
-    // Add the new genre to the circleGenre array if it doesn't already exist
     if (!innerCircle.circleGenre.includes(newGenre)) {
       innerCircle.circleGenre.push(newGenre);
       await innerCircle.save();
     } else {
-      res.status(400).json({ error: 'Genre already exists in the inner circle' });
+      res
+        .status(400)
+        .json({ error: 'Genre already exists in the inner circle' });
       return;
     }
 
@@ -199,6 +195,71 @@ export const addGenreToInnerCircle = async (
       innerCircle,
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const removeUserFromInnerCircle = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { circleId, userIdToRemove } = req.body;
+    const userId = req.user?._id as UserModel;
+
+    const innerCircle = await InnerCircle.findById(circleId).session(session);
+    if (!innerCircle) {
+      res.status(404).json({ error: 'Inner Circle not found' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
+    const isAdmin = innerCircle.members.some(
+      (member) =>
+        member.userId.toString() === userId.toString() &&
+        member.role === 'ICAdmin'
+    );
+    if (!isAdmin) {
+      res.status(403).json({ error: 'Only admins can remove members' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
+    innerCircle.members = innerCircle.members.filter(
+      (member) => member.userId.toString() !== userIdToRemove.toString()
+    );
+    await innerCircle.save({ session });
+
+    const userUpdate = await User.findByIdAndUpdate(
+      userIdToRemove,
+      { $pull: { innerCircle: circleId } },
+      { new: true, session }
+    );
+
+    if (!userUpdate) {
+      res.status(404).json({ message: 'User not found' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: 'User removed from Inner Circle successfully',
+      innerCircle,
+      user: userUpdate,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
