@@ -9,6 +9,9 @@ export const createInnerCircle = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const user = req.user as UserModel;
     const { _id: userId } = user;
@@ -16,10 +19,11 @@ export const createInnerCircle = async (
 
     if (!userId || !circleName || !circleGenre) {
       res.status(400).json({ error: 'Please provide all the required fields' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Create the new Inner Circle
     const newInnerCircle = new InnerCircle({
       circleName,
       circleGenre,
@@ -27,6 +31,7 @@ export const createInnerCircle = async (
         {
           userId,
           role: 'ICAdmin',
+          inviteStatus: 'Accept',
           createdBy: userId.toString(),
           addedBy: userId,
         },
@@ -34,19 +39,23 @@ export const createInnerCircle = async (
       ISBN,
     });
 
-    const savedInnerCircle = await newInnerCircle.save();
+    const savedInnerCircle = await newInnerCircle.save({ session });
 
-    // Add the Inner Circle ID to the user's innerCircle array
     const userUpdate = await User.findByIdAndUpdate(
       userId,
       { $push: { innerCircle: savedInnerCircle._id } },
-      { new: true }
+      { new: true, session }
     );
 
     if (!userUpdate) {
       res.status(404).json({ message: 'User not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(201).json({
       message: 'Inner Circle created successfully',
@@ -54,10 +63,11 @@ export const createInnerCircle = async (
       user: userUpdate,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
-//? Send Invitation
 
 export const sendInvitation = async (
   req: CustomRequest,
@@ -96,7 +106,6 @@ export const sendInvitation = async (
       return;
     }
 
-    // Check if the invitee is already a member of the inner circle
     const isMember = innerCircle.members.some(
       (member) =>
         member.userId.toString() === inviteeId.toString() &&
@@ -109,7 +118,6 @@ export const sendInvitation = async (
       return;
     }
 
-    // Check if an invitation is already pending
     const isPending = innerCircle.members.some(
       (member) =>
         member.userId.toString() === inviteeId.toString() &&
@@ -120,14 +128,12 @@ export const sendInvitation = async (
       return;
     }
 
-    // Check if the invitee exists in the database
     const invitee = await User.findById(inviteeId);
     if (!invitee) {
       res.status(404).json({ error: 'Invitee not found' });
       return;
     }
 
-    // Add the invitation to the inner circle
     innerCircle.members.push({
       userId: inviteeId,
       role: 'Member',
@@ -139,7 +145,6 @@ export const sendInvitation = async (
     });
     await innerCircle.save();
 
-    // Add the invitation to the invitee's invites
     invitee.invites.push(circleId);
     await invitee.save();
 
@@ -260,6 +265,38 @@ export const removeUserFromInnerCircle = async (
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    next(error);
+  }
+};
+
+export const fetchInnerCircleMembers = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { circleId } = req.params;
+
+    const innerCircle = await InnerCircle.findById(circleId);
+    if (!innerCircle) {
+      res.status(404).json({ error: 'Inner Circle not found' });
+      return;
+    }
+
+    const admin = innerCircle.members.find(
+      (member) => member.role === 'ICAdmin'
+    );
+
+    const members = innerCircle.members.filter(
+      (member) => member.role !== 'ICAdmin'
+    );
+
+    res.status(200).json({
+      message: 'Inner Circle members retrieved successfully',
+      admin,
+      members,
+    });
+  } catch (error) {
     next(error);
   }
 };

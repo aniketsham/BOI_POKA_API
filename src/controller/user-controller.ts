@@ -64,7 +64,7 @@ export const loginUser = async (
   try {
     const { mobileNumber, password } = req.body;
 
-    const user = await User.findOne({ mobileNumber });
+    const user = await User.findOne({ mobileNumber }).select('+password');
 
     if (!user) {
       res.status(400).json({ error: 'Invalid Credentials' });
@@ -173,15 +173,20 @@ export const acceptInvitation = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { _id: userId } = req.user as UserModel;
     const { innerCircleId } = req.body;
 
     const typedUserId = userId as mongoose.Types.ObjectId;
-    // Find the user
-    const user = await User.findById(userId);
+
+    const user = await User.findById(userId).session(session);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
@@ -191,54 +196,52 @@ export const acceptInvitation = async (
 
     if (invitationIndex === -1) {
       res.status(400).json({ message: 'Invitation not found in user invites' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Remove the invitation from the user's invites list
     user.invites.splice(invitationIndex, 1);
-    await user.save();
+    await user.save({ session });
 
-    const InnerCircle = await innerCircle.findById(innerCircleId);
+    const InnerCircle = await innerCircle
+      .findById(innerCircleId)
+      .session(session);
     if (!InnerCircle) {
       res.status(404).json({ message: 'Circle not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Debugging: Check the userId and member.userId types and values
-    console.log('userId:', userId);
-    InnerCircle.members.forEach((member, index) => {
-      console.log(`member[${index}] userId value:`, member.userId);
-    });
-
-    // Compare as string if .equals() is not working
     const memberIndex = InnerCircle.members.findIndex((member) => {
-      console.log(
-        'Comparing',
-        typedUserId.toString(),
-        member.userId.toString()
-      );
       return typedUserId.toString() === member.userId.toString();
     });
 
     if (memberIndex !== -1) {
-      // Update the inviteStatus to "Accept" in the InnerCircle members array
       InnerCircle.members[memberIndex].inviteStatus = 'Accept';
-      InnerCircle.markModified('members'); // Mark the members array as modified
-      await InnerCircle.save();
+      InnerCircle.markModified('members');
+      await InnerCircle.save({ session });
     } else {
       res.status(400).json({ message: 'User is not a member of the circle' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Add the innerCircleId to the user's innerCircle array
     user.innerCircle.push(innerCircleId);
-    await user.save();
+    await user.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(200).json({
       message: 'Invitation accepted successfully',
-      innerCircle: InnerCircle,
+      innerCircle,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
@@ -248,17 +251,20 @@ export const rejectInvitation = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { _id: userId } = req.user as UserModel; // userId is extracted from req.user
+    const { _id: userId } = req.user as UserModel;
     const { innerCircleId } = req.body;
 
-    // Ensure userId is treated as an ObjectId
     const typedUserId = userId as mongoose.Types.ObjectId;
 
-    // Find the user
-    const user = await User.findById(typedUserId);
+    const user = await User.findById(typedUserId).session(session);
     if (!user) {
       res.status(404).json({ message: 'User not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
@@ -268,52 +274,113 @@ export const rejectInvitation = async (
 
     if (invitationIndex === -1) {
       res.status(400).json({ message: 'Invitation not found in user invites' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Remove the invitation from the user's invites list
     user.invites.splice(invitationIndex, 1);
-    await user.save();
+    await user.save({ session });
 
-    const InnerCircle = await innerCircle.findById(innerCircleId);
+    const InnerCircle = await innerCircle
+      .findById(innerCircleId)
+      .session(session);
     if (!InnerCircle) {
       res.status(404).json({ message: 'Circle not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Debugging: Check the userId and member.userId types and values
-    console.log('typedUserId:', typedUserId);
-    InnerCircle.members.forEach((member, index) => {
-      console.log(`member[${index}] userId value:`, member.userId);
-    });
-
-    // Compare as string if .equals() is not working
     const memberIndex = InnerCircle.members.findIndex((member) => {
-      // Compare userId and member.userId as strings
-      console.log(
-        'Comparing',
-        typedUserId.toString(),
-        member.userId.toString()
-      );
       return typedUserId.toString() === member.userId.toString();
     });
 
     if (memberIndex !== -1) {
-      // Update the inviteStatus to "Reject"
       InnerCircle.members[memberIndex].inviteStatus = 'Reject';
-
-      // Mark the members array as modified
       InnerCircle.markModified('members');
-      await InnerCircle.save();
+      await InnerCircle.save({ session });
     } else {
       res.status(400).json({ message: 'User is not a member of the circle' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(200).json({
       message: 'Invitation rejected successfully',
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
+  }
+};
+
+export const leaveInnerCircle = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { circleId } = req.body;
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+
+    const InnerCircle = await innerCircle.findById(circleId).session(session);
+    if (!InnerCircle) {
+      res.status(404).json({ error: 'Inner Circle not found' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
+    const isMember = InnerCircle.members.some(
+      (member) => member.userId.toString() === userId.toString()
+    );
+    if (!isMember) {
+      res
+        .status(403)
+        .json({ error: 'You are not a member of this Inner Circle' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
+    InnerCircle.members = InnerCircle.members.filter(
+      (member) => member.userId.toString() !== userId.toString()
+    );
+    await InnerCircle.save({ session });
+
+    const userUpdate = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { innerCircle: circleId } },
+      { new: true, session }
+    );
+
+    if (!userUpdate) {
+      res.status(404).json({ message: 'User not found' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({
+      message: 'You have successfully left the Inner Circle',
+      innerCircle,
+      user: userUpdate,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

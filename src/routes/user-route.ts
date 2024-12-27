@@ -6,6 +6,7 @@ import {
   fetchInvites,
   acceptInvitation,
   rejectInvitation,
+  leaveInnerCircle,
 } from '../controller/user-controller';
 import { registerValidation } from '../validations/validation';
 import {
@@ -26,4 +27,5 @@ userRouter.put('/update', updateUser);
 userRouter.get('/fetchInvites', isAuthenticated, fetchInvites);
 userRouter.post('/acceptInvite', isAuthenticated, acceptInvitation);
 userRouter.post('/rejectInvite', isAuthenticated, rejectInvitation);
+userRouter.post('/leaveInnerCircle', isAuthenticated, leaveInnerCircle);
 export default userRouter;
