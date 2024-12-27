@@ -16,7 +16,7 @@ export const addBookToUser = async (
       bookId,
       readProgress = 0,
       status = 'reading',
-      libraryName = 'My Library',
+      libraryName = 'Home',
       location = [],
       source: { sourceName = '', sourceType = '' },
     } = req.body;
@@ -632,7 +632,7 @@ export const makeBorrowRequest = async (
 ): Promise<void> => {
   try {
     const { bookId, ownerId, requestedUntil } = req.body;
-    const requesterId = req.user?._id as UserModel; // Assuming user ID is available in req.user
+    const requesterId = req.user?._id as UserModel;
 
     const newRequest = new BorrowRequest({
       bookId,
@@ -656,12 +656,16 @@ export const acceptRequest = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { requestId } = req.params;
     const userId = req.user?._id as mongoose.Types.ObjectId;
-    const request = await BorrowRequest.findById(requestId);
+    const request = await BorrowRequest.findById(requestId).session(session);
     if (!request) {
       res.status(404).json({ message: 'Request not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
@@ -669,31 +673,22 @@ export const acceptRequest = async (
       res
         .status(403)
         .json({ message: 'You are not authorized to accept this request' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
     request.status = 'accepted';
     request.updatedAt = new Date();
-    await request.save();
+    await request.save({ session });
 
-    const addBookReq = {
-      user: { _id: request.requesterId },
-      body: {
-        bookId: request.bookId,
-        readProgress: 0,
-        status: 'borrowed',
-        libraryName: 'Borrowed Books',
-        location: [0, 0],
-        source: { sourceName: 'Borrowed', sourceType: 'borrow' },
-      },
-    };
+    await session.commitTransaction();
+    session.endSession();
 
-    await addBookToUser(addBookReq as any, res, next);
-
-    res
-      .status(200)
-      .json({ message: 'Request accepted and book added to user' });
+    res.status(200).json({ message: 'Request accepted successfully' });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
@@ -705,7 +700,7 @@ export const rejectRequest = async (
 ): Promise<void> => {
   try {
     const { requestId } = req.params;
-    const userId = req.user?._id as mongoose.Types.ObjectId; // Assuming user ID is available in req.user
+    const userId = req.user?._id as mongoose.Types.ObjectId;
 
     const request = await BorrowRequest.findById(requestId);
     if (!request) {

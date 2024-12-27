@@ -43,7 +43,7 @@ export const loginSuperAdmin = async (
   try {
     const { email, password } = req.body;
 
-    const superAdmin = await SuperAdmin.findOne({ email });
+    const superAdmin = await SuperAdmin.findOne({ email }).select('+password');
     if (!superAdmin) {
       res.status(404).json({ error: 'Invalid Credentials' });
       return;
