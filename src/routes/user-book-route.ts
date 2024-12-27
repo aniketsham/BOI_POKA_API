@@ -5,7 +5,6 @@ import {
   fetchAllBook,
   fetchBookInShelf,
   updateBookProgress,
-  updateBookStatus,
   fetchBooksAtLocation,
   fetchBookByLibraryName,
   deleteBookFromLibrary,
@@ -39,8 +38,9 @@ userBookRouter.get('/fetchBooksByColor', isAuthenticated, fetchBooksByColor);
 
 userBookRouter.post('/addBook', isAuthenticated, addBookToUser);
 userBookRouter.post('/addColorToBook', isAuthenticated, addColorToBook);
-userBookRouter.put('/updateBookProgress', isAuthenticated, updateBookProgress);
-userBookRouter.put('/updateBookStatus', isAuthenticated, updateBookStatus);
+// userBookRouter.put('/updateBookProgress', isAuthenticated, updateBookProgress);
+// userBookRouter.put('/updateBookStatus', isAuthenticated, updateBookStatus);
+userBookRouter.put('/update-progress', isAuthenticated, updateBookProgress);
 userBookRouter.delete(
   '/deleteBookFromAll',
   isAuthenticated,
