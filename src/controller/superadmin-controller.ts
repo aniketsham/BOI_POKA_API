@@ -45,13 +45,13 @@ export const loginSuperAdmin = async (
 
     const superAdmin = await SuperAdmin.findOne({ email });
     if (!superAdmin) {
-      res.status(404).json({ error: 'SuperAdmin not found' });
+      res.status(404).json({ error: 'Invalid Credentials' });
       return;
     }
 
     const isMatch = await superAdmin.comparePassword(password);
     if (!isMatch) {
-      res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Invalid Credentials' });
       return;
     }
     const token = jwt.sign(

@@ -57,7 +57,7 @@ export const loginAdmin = async (
     }
     const isPasswordValid = await admin.comparePassword(password);
     if (!isPasswordValid) {
-      res.status(401).json({ error: 'Invalid Password' });
+      res.status(401).json({ error: 'Invalid Credentials' });
       return;
     }
     const token = jwt.sign(
@@ -238,9 +238,9 @@ export const deleteBookFromUserBook = async (
       },
       {
         arrayFilters: [
-          { 'lib.libraryName': libraryName }, // Match the correct library
+          { 'lib.libraryName': libraryName }, 
         ],
-        new: true, // Return the updated document
+        new: true, 
       }
     );
 
@@ -289,8 +289,8 @@ export const updateUserBookProgress = async (
       },
       {
         arrayFilters: [
-          { 'lib.libraryName': libraryName }, // Match library
-          { 'book.bookId': bookId }, // Match book in any shelf
+          { 'lib.libraryName': libraryName }, 
+          { 'book.bookId': bookId }, 
         ],
         new: true,
       }
