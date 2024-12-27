@@ -69,40 +69,34 @@ export const createInnerCircle = async (
   }
 };
 
+// filepath: /Users/aniketsharma/Dropbox/Mac/Desktop/BOI_POKA_API/src/controller/inner-circle-controller.ts
 export const sendInvitation = async (
   req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const { inviteeId, circleId } = req.body;
-    const user = req.user as UserModel;
-    if (!user || !user._id) {
-      res.status(400).json({ error: 'User not found or invalid user type' });
-      return;
-    }
-    const { _id: userId } = user;
+    const { innerCircleId, inviteeId } = req.body;
+    const inviterId = req.user?._id as mongoose.Schema.Types.ObjectId;
 
-    if (!inviteeId) {
-      res.status(400).json({ error: 'inviteeId is required' });
-      return;
-    }
-
-    // Check if the inner circle exists
-    const innerCircle = await InnerCircle.findById(circleId);
+    const innerCircle =
+      await InnerCircle.findById(innerCircleId).session(session);
     if (!innerCircle) {
-      res.status(404).json({ error: 'Inner Circle not found' });
+      res.status(404).json({ error: 'Inner circle not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
-    // Check if the user sending the invite is an admin
-    const isAdmin = innerCircle.members.some(
-      (member) =>
-        member.userId.toString() === userId.toString() &&
-        member.role === 'ICAdmin'
+    const inviter = innerCircle.members.find(
+      (member) => member.userId.toString() === inviterId.toString()
     );
-    if (!isAdmin) {
+    if (!inviter || inviter.role !== 'admin') {
       res.status(403).json({ error: 'Only admins can send invitations' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
@@ -115,6 +109,8 @@ export const sendInvitation = async (
       res
         .status(400)
         .json({ error: 'User is already a member of the inner circle' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
@@ -125,34 +121,30 @@ export const sendInvitation = async (
     );
     if (isPending) {
       res.status(400).json({ error: 'Invitation already sent and pending' });
-      return;
-    }
-
-    const invitee = await User.findById(inviteeId);
-    if (!invitee) {
-      res.status(404).json({ error: 'Invitee not found' });
+      await session.abortTransaction();
+      session.endSession();
       return;
     }
 
     innerCircle.members.push({
       userId: inviteeId,
-      role: 'Member',
-      addedBy: userId as mongoose.Schema.Types.ObjectId,
-      inviteStatus: 'Accept',
+      inviteStatus: 'Pending',
+      role: 'member',
+      addedBy: inviterId as mongoose.Schema.Types.ObjectId,
 
       addedAt: new Date(),
       isRemoved: false,
     });
-    await innerCircle.save();
 
-    invitee.invites.push(circleId);
-    await invitee.save();
+    await innerCircle.save({ session });
 
-    res.status(200).json({
-      message: 'Invitation sent successfully',
-      innerCircle,
-    });
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: 'Invitation sent successfully' });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };

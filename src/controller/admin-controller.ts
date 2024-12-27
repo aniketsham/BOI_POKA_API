@@ -50,7 +50,7 @@ export const loginAdmin = async (
       res.status(400).json({ error: 'Email and password are required' });
       return;
     }
-    const admin = await Admin.findOne({ email });
+    const admin = await Admin.findOne({ email }).select('+password');
     if (!admin) {
       res.status(401).json({ error: 'Invalid Credentials' });
       return;
@@ -237,10 +237,8 @@ export const deleteBookFromUserBook = async (
         },
       },
       {
-        arrayFilters: [
-          { 'lib.libraryName': libraryName }, 
-        ],
-        new: true, 
+        arrayFilters: [{ 'lib.libraryName': libraryName }],
+        new: true,
       }
     );
 
@@ -289,8 +287,8 @@ export const updateUserBookProgress = async (
       },
       {
         arrayFilters: [
-          { 'lib.libraryName': libraryName }, 
-          { 'book.bookId': bookId }, 
+          { 'lib.libraryName': libraryName },
+          { 'book.bookId': bookId },
         ],
         new: true,
       }

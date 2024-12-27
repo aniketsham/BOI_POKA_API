@@ -210,7 +210,7 @@ export const fetchFilteredBooks = async (
     if (genre) {
       const genres = Array.isArray(genre) ? genre : [genre];
       filter.genre = {
-        $in: genres.map((g) => new RegExp(`\\b${g}\\b`, 'i')), // Use word boundaries to match exact words
+        $in: genres.map((g) => new RegExp(`\\b${g}\\b`, 'i')),
       };
     }
 
@@ -221,7 +221,7 @@ export const fetchFilteredBooks = async (
     if (author) {
       const authors = Array.isArray(author) ? author : [author];
       filter.author = {
-        $in: authors.map((a) => new RegExp(`\\b${a}\\b`, 'i')), // Use word boundaries to match exact words
+        $in: authors.map((a) => new RegExp(`\\b${a}\\b`, 'i')),
       };
     }
 
