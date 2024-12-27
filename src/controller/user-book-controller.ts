@@ -232,24 +232,39 @@ export const updateBookProgress = async (
     const { _id: userId } = req.user as UserModel;
     const { bookId, readProgress } = req.body;
 
-    const userLibrary = await UserBook.findOne({ user: userId });
-
-    if (!userLibrary) {
-      res.status(404).json({ message: 'User Library not found' });
+    if (readProgress < 0 || readProgress > 100) {
+      res
+        .status(400)
+        .json({ message: 'Read progress must be between 0 and 100' });
       return;
     }
 
-    const book = userLibrary.libraries
-      .flatMap((library) => library.shelves)
-      .flatMap((shelf) => shelf.books)
-      .find((b) => b.bookId.toString() === bookId);
+    const userLibrary = await UserBook.findOne({ user: userId });
+    if (!userLibrary) {
+      res.status(404).json({ message: 'User library not found' });
+      return;
+    }
 
-    if (!book) {
+    let bookFound = false;
+    userLibrary.libraries.forEach((library) => {
+      library.shelves.forEach((shelf) => {
+        const book = shelf.books.find(
+          (book) => book.bookId.toString() === bookId
+        );
+        if (book) {
+          book.readProgress = readProgress;
+          if (readProgress === 100) {
+            book.status = 'Completed';
+          }
+          bookFound = true;
+        }
+      });
+    });
+
+    if (!bookFound) {
       res.status(404).json({ message: 'Book not found in user library' });
       return;
     }
-
-    book.readProgress = readProgress;
 
     await userLibrary.save();
 

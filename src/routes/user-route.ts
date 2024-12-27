@@ -7,6 +7,7 @@ import {
   acceptInvitation,
   rejectInvitation,
   leaveInnerCircle,
+  updatePassword,
 } from '../controller/user-controller';
 import { registerValidation } from '../validations/validation';
 import {
@@ -23,7 +24,8 @@ userRouter.post('/login', loginUser);
 userRouter.post('/google', handleGoogleLogin);
 userRouter.post('/linkedin', handleLinkedinLogin);
 userRouter.post('/facebook', handleFacebookLogin);
-userRouter.put('/update', updateUser);
+userRouter.put('/update', isAuthenticated, updateUser);
+userRouter.put('/updatePassword', isAuthenticated, updatePassword);
 userRouter.get('/fetchInvites', isAuthenticated, fetchInvites);
 userRouter.post('/acceptInvite', isAuthenticated, acceptInvitation);
 userRouter.post('/rejectInvite', isAuthenticated, rejectInvitation);

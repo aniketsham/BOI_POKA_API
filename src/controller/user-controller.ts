@@ -109,11 +109,6 @@ export const updateUser = async (
 
     const updateData = req.body;
 
-    if (updateData.password) {
-      const hashedPassword = await bcrypt.hash(updateData.password, 10);
-      updateData.password = hashedPassword;
-    }
-
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { ...updateData, updatedAt: Date.now() },
@@ -133,6 +128,43 @@ export const updateUser = async (
     next(err);
   }
 };
+
+//? Update password
+export const updatePassword = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { _id: userId } = req.user as UserModel;
+    const { password } = req.body;
+
+    if (!password) {
+      res.status(400).json({ error: 'Password is required' });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { password: hashedPassword, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Password updated successfully',
+      user: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export const fetchInvites = async (
   req: CustomRequest,
