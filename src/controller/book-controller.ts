@@ -1,62 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import Book from '../models/book-model';
 import axios from 'axios';
-// export const addBook = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<void> => {
-//   try {
-//     const books = req.body.items;
-
-//     if (!books || books.length === 0) {
-//       throw new Error('No books found in the response');
-//     }
-
-//     const savedBooks = await Promise.all(
-//       books.map(async (book: any) => {
-//         const { volumeInfo } = book;
-
-//         const isbn = volumeInfo.industryIdentifiers.map(
-//           (identifier: any) => identifier.identifier
-//         );
-//         console.log;
-//         const title = volumeInfo.title;
-//         const author = volumeInfo.authors || [];
-//         const publisher = volumeInfo.publisher || '';
-//         const publicationYear = parseInt(volumeInfo.publishedDate, 10);
-//         const genre = volumeInfo.categories || [];
-//         const description = volumeInfo.description || '';
-//         const coverImage = volumeInfo.imageLinks?.thumbnail || '';
-//         const language = volumeInfo.language ? [volumeInfo.language] : [];
-//         const rating = volumeInfo.averageRating || 0;
-
-//         const newBook = new Book({
-//           ISBN: isbn,
-//           title,
-//           author,
-//           publisher,
-//           publicationYear,
-//           genre,
-//           description,
-//           coverImage,
-//           language,
-//           rating,
-//           addedAt: new Date(),
-//           updatedAt: new Date(),
-//           isDeleted: false,
-//         });
-
-//         await newBook.save();
-//         return newBook;
-//       })
-//     );
-
-//     res.status(201).json(savedBooks);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+import mongoose, { SortOrder } from 'mongoose';
+import { getSortOptions } from '../utils/sorting';
 export const handleBook = async (
   req: Request,
   res: Response,
@@ -73,7 +19,6 @@ export const handleBook = async (
       books.map(async (book: any) => {
         const { volumeInfo } = book;
 
-        // Extract ISBN array (handling both ISBN-10 and ISBN-13)
         const isbnArray = volumeInfo.industryIdentifiers.map(
           (identifier: any) => identifier.identifier
         );
@@ -84,9 +29,9 @@ export const handleBook = async (
         const publicationYear = parseInt(volumeInfo.publishedDate, 10);
         const genre = volumeInfo.categories || [];
         const description = volumeInfo.description || '';
-        const coverImage = volumeInfo.imageLinks?.thumbnail || '';
+        const coverImage = volumeInfo.imageLinks?.thumbnail;
         const language = volumeInfo.language ? [volumeInfo.language] : [];
-        const rating = volumeInfo.averageRating || 0.5;
+        const rating = volumeInfo.averageRating;
 
         const existingBook = await Book.findOne({
           ISBN: { $in: isbnArray },
@@ -143,10 +88,16 @@ export const fetchBookByGenre = async (
 ): Promise<void> => {
   try {
     const genre = req.params.genre;
+    const { sortBy, order } = req.query;
 
-    const books = await Book.find({ genre: { $in: genre } });
+    const sortOptions = getSortOptions({
+      sortBy: sortBy as 'addedAt' | 'author' | 'genre',
+      order: parseInt(order as string, 10) as SortOrder,
+    });
+
+    const books = await Book.find({ genre: { $in: genre } }).sort(sortOptions);
     if (books.length === 0) {
-      res.status(404).json({ error: 'No books found for the given genres' });
+      res.status(404).json({ error: 'No books found for the given genre' });
       return;
     }
 
@@ -163,8 +114,16 @@ export const fetchBookByAuthor = async (
 ): Promise<void> => {
   try {
     const author = req.params.author;
+    const { sortBy, order } = req.query;
 
-    const books = await Book.find({ author: { $in: author } });
+    const sortOptions = getSortOptions({
+      sortBy: sortBy as 'addedAt' | 'author' | 'genre',
+      order: parseInt(order as string, 10) as SortOrder,
+    });
+
+    const books = await Book.find({ author: { $in: author } }).sort(
+      sortOptions
+    );
     if (books.length === 0) {
       res.status(404).json({ error: 'No books found for the given author' });
       return;
@@ -183,14 +142,23 @@ export const fetchSimilarBooks = async (
 ): Promise<void> => {
   try {
     const ParamId = req.params.id;
+    const { sortBy, order } = req.query;
+
     const book = await Book.findById(ParamId);
     if (!book) {
       res.status(404).json({ error: 'Book not found' });
       return;
     }
-    const similarBooks = await Book.find({
-      $or: [{ genre: { $in: book.genre } }, { author: { $in: book.author } }],
+
+    const sortOptions = getSortOptions({
+      sortBy: sortBy as 'addedAt' | 'author' | 'genre',
+      order: parseInt(order as string, 10) as SortOrder,
     });
+
+    const similarBooks = await Book.find({
+      genre: { $in: book.genre },
+      _id: { $ne: book._id },
+    }).sort(sortOptions);
 
     if (similarBooks.length === 0) {
       res.status(404).json({ error: 'No similar books found' });
@@ -227,7 +195,15 @@ export const fetchFilteredBooks = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { genre, rating, author, limit } = req.query;
+    const {
+      genre,
+      rating,
+      author,
+      page = 1,
+      limit = 10,
+      sortBy,
+      order,
+    } = req.query;
 
     const filter: any = {};
 
@@ -249,16 +225,24 @@ export const fetchFilteredBooks = async (
       };
     }
 
+    const skip =
+      (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
+    const sortOptions = getSortOptions({
+      sortBy: sortBy as 'addedAt' | 'author' | 'genre',
+      order: parseInt(order as string, 10) as SortOrder,
+    });
+
     const books = await Book.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(limit ? parseInt(limit as string, 10) : 10);
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(parseInt(limit as string, 10));
 
     if (!books.length) {
       res.status(404).json({ error: 'No books found matching the criteria' });
       return;
     }
 
-    res.status(200).json(books);
+    res.status(200).json({ books });
   } catch (error) {
     next(error);
   }
@@ -298,7 +282,7 @@ export const fetchBookByISBN = async (
         genre: googleBook.categories || [],
         coverImage: googleBook.imageLinks?.thumbnail || '',
         language: googleBook.language ? [googleBook.language] : [],
-        rating: googleBook.averageRating || 0.5,
+        rating: googleBook.averageRating,
       });
 
       await book.save();
@@ -315,25 +299,67 @@ export const fetchSearchResult = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const searchQuery = req.params.searchQuery;
-    const books = await Book.find({
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const localBooks = await Book.find({
       $or: [
         { title: { $regex: searchQuery, $options: 'i' } },
         { author: { $regex: searchQuery, $options: 'i' } },
         { genre: { $regex: searchQuery, $options: 'i' } },
       ],
-    });
+    })
+      .skip(skip)
+      .limit(limit)
+      .session(session);
 
-    if (books.length === 0) {
-      res
-        .status(404)
-        .json({ error: 'No books found for the given search query' });
+    if (localBooks.length > 0) {
+      await session.commitTransaction();
+      session.endSession();
+      res.status(200).json({ books: localBooks });
       return;
     }
+    const googleBooksResponse = await axios.get(
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+        searchQuery
+      )}&startIndex=${skip}&maxResults=${limit}&API_KEY=${process.env.GOOGLE_API_KEY}`
+    );
+    ``;
 
-    res.status(200).json(books);
+    const googleBooks = googleBooksResponse.data.items.map((item: any) => {
+      const { volumeInfo } = item;
+      return {
+        industryIdentifiers:
+          volumeInfo.industryIdentifiers?.map((id: any) => id.identifier) || [],
+        title: volumeInfo.title,
+        author: volumeInfo.authors || [],
+        publisher: volumeInfo.publisher || '',
+        publicationYear: volumeInfo.publishedDate
+          ? parseInt(volumeInfo.publishedDate, 10)
+          : null,
+        genre: volumeInfo.categories || [],
+        description: volumeInfo.description || '',
+        coverImage: volumeInfo.imageLinks?.thumbnail || '',
+        language: volumeInfo.language ? [volumeInfo.language] : [],
+        rating: volumeInfo.averageRating,
+      };
+    });
+
+    const newBooks = googleBooks.map((book: any) => new Book(book));
+    await Book.insertMany(newBooks, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ books: googleBooks });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     next(error);
   }
 };
