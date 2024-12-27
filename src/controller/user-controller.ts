@@ -41,14 +41,9 @@ export const registerUser = async (
       isActive: true,
       isVerified: false,
     });
-    const savedUser = await newUser.save();
+    await newUser.save();
     res.status(201).json({
       message: 'User registered successfully',
-      user: {
-        id: savedUser._id,
-        fullName: savedUser.fullName,
-        email: savedUser.email,
-      },
     });
   } catch (error) {
     next(error);
@@ -86,12 +81,6 @@ export const loginUser = async (
     res.status(200).json({
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        mobileNumber: user.mobileNumber,
-        role: user.role,
-      },
     });
     return;
   } catch (error) {
@@ -121,8 +110,7 @@ export const updateUser = async (
     }
 
     res.status(200).json({
-      message: 'User updated successfully',
-      user: updatedUser,
+      message: 'User updated successfully', 
     });
   } catch (err) {
     next(err);
@@ -159,7 +147,6 @@ export const updatePassword = async (
 
     res.status(200).json({
       message: 'Password updated successfully',
-      user: updatedUser,
     });
   } catch (error) {
     next(error);
@@ -408,7 +395,7 @@ export const leaveInnerCircle = async (
     res.status(200).json({
       message: 'You have successfully left the Inner Circle',
       innerCircle,
-      user: userUpdate,
+      // user: userUpdate,
     });
   } catch (error) {
     await session.abortTransaction();
