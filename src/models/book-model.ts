@@ -27,14 +27,14 @@ const bookSchema: mongoose.Schema<Book> = new mongoose.Schema({
   publicationYear: { type: Number, required: true },
   genre: [{ type: String, required: true }],
   description: { type: String, required: true },
-  coverImage: { type: String, required: true },
+  coverImage: { type: String },
   language: [{ type: String, required: true }],
-  rating: { type: Number, required: true },
+  rating: { type: Number, required: true, default: 0.5 },
   addedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-  isDeleted: { type: Boolean, default: false },
-  deletedAt: { type: Date },
-  deletedBy: { type: String },
+  isDeleted: { type: Boolean, default: false, select: false },
+  deletedAt: { type: Date, select: false },
+  deletedBy: { type: String, select: false },
 });
 
 const Book = mongoose.model<Book>('Book', bookSchema);
