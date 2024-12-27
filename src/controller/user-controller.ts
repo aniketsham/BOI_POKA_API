@@ -67,13 +67,13 @@ export const loginUser = async (
     const user = await User.findOne({ mobileNumber });
 
     if (!user) {
-      res.status(400).json({ error: 'Invalid mobile number or password' });
+      res.status(400).json({ error: 'Invalid Credentials' });
       return;
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      res.status(400).json({ error: 'Invalid mobile number or password' });
+      res.status(400).json({ error: 'Invalid Credentials' });
       return;
     }
 
