@@ -14,24 +14,41 @@ export const handleGoogleLogin = async (
       return;
     }
 
-
     let user = await User.findOne({
       email,
       'socialProvider.provider': 'google',
     });
 
     if (!user) {
-      user = new User({
-        fullName: displayName || '',
-        email,
-        mobileNumber: phoneNumber || '',
-        profileImage: photoUrl || '',
-        userType: 'user',
-        socialProvider: [{ id: uid, provider: 'google', email }],
-        isVerified: true,
-      });
+      user = await User.findOne({ email });
 
-      await user.save();
+      if (user) {
+        const providerExists = user.socialProvider.some(
+          (provider) => provider.provider === 'google'
+        );
+
+        if (!providerExists) {
+          user.socialProvider.push({
+            id: uid,
+            provider: 'google',
+            email,
+          });
+
+          await user.save();
+        }
+      } else {
+        user = new User({
+          fullName: displayName || '',
+          email,
+          mobileNumber: phoneNumber || '',
+          profileImage: photoUrl || '',
+          userType: 'user',
+          socialProvider: [{ id: uid, provider: 'google', email }],
+          isVerified: true,
+        });
+
+        await user.save();
+      }
     }
 
     res.status(200).json({
@@ -50,7 +67,7 @@ export const handleLinkedinLogin = async (
   next: NextFunction
 ) => {
   try {
-    const { token, email, name, picture, sub } = req.body;
+    const { email, name, picture, sub } = req.body;
 
     let user = await User.findOne({ email });
 
