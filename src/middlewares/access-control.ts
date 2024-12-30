@@ -27,7 +27,7 @@ export const accessControl = (access: string): RequestHandler => {
         }
       }
 
-      res.status(403).json({ message: 'Access denied' });
+      res.status(403).json({ message: 'Access denied ww' });
     } catch (error) {
       next(error);
     }

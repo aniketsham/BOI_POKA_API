@@ -5,6 +5,8 @@ import User from '../models/user-model';
 import bcrypt from 'bcrypt';
 import Book from '../models/book-model';
 import UserBook from '../models/userbook-model';
+import { CustomRequest } from '../types/types';
+import mongoose from 'mongoose';
 export const registerAdmin = async (
   req: Request,
   res: Response,
@@ -141,42 +143,43 @@ export const updateUserById = async (
 };
 
 export const deleteUser = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { userId } = req.params;
-    const { deletedBy } = req.body;
+    const { userIds } = req.body; // Expecting an array of userIds
+    const deletedBy = req.user?._id as mongoose.Types.ObjectId;
 
-    if (!deletedBy) {
-      res.status(400).json({ error: 'deletedBy is required' });
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      res
+        .status(400)
+        .json({ error: 'User IDs are required and should be an array' });
       return;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
+    const result = await User.updateMany(
+      { _id: { $in: userIds } },
       {
         isDeleted: true,
         isActive: false,
         deletedAt: new Date(),
-        deletedBy: deletedBy,
-        deactivatedAt: new Date(),
-        deactivatedBy: deletedBy,
+        deletedBy,
         updatedAt: new Date(),
       },
-      { new: true, runValidators: true }
+      { new: true }
     );
-    if (!updatedUser) {
-      res.status(404).json({ error: 'User not found' });
+
+    if (result.modifiedCount === 0) {
+      res.status(404).json({ error: 'No users found to delete' });
       return;
     }
 
-    res.status(200).json({
-      message: 'User marked as deleted successfully',
-    });
-  } catch (err) {
-    next(err);
+    res
+      .status(200)
+      .json({ message: 'Users marked as deleted successfully', result });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -323,8 +326,8 @@ export const updateUserBookStatus = async (
       },
       {
         arrayFilters: [
-          { 'lib.libraryName': libraryName }, // Match library
-          { 'book.bookId': bookId }, // Match book in any shelf
+          { 'lib.libraryName': libraryName },
+          { 'book.bookId': bookId },
         ],
         new: true,
       }
@@ -377,6 +380,81 @@ export const deleteUserLibrary = async (
       message: 'Library deleted successfully',
       userBook,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deactivateUser = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { userIds } = req.body; // Expecting an array of userIds
+    const deactivatedBy = req.user?._id as mongoose.Types.ObjectId;
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      res
+        .status(400)
+        .json({ error: 'User IDs are required and should be an array' });
+      return;
+    }
+
+    const result = await User.updateMany(
+      { _id: { $in: userIds } },
+      {
+        isActive: false,
+        deactivatedAt: new Date(),
+        deactivatedBy,
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (result.modifiedCount === 0) {
+      res.status(404).json({ error: 'No users found to deactivate' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Users deactivated successfully', result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const activateUser = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { userIds } = req.body; // Expecting an array of userIds
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      res
+        .status(400)
+        .json({ error: 'User IDs are required and should be an array' });
+      return;
+    }
+
+    const result = await User.updateMany(
+      { _id: { $in: userIds } },
+      {
+        isActive: true,
+        deactivatedAt: null,
+        deactivatedBy: null,
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (result.modifiedCount === 0) {
+      res.status(404).json({ error: 'No users found to activate' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Users activated successfully', result });
   } catch (error) {
     next(error);
   }
