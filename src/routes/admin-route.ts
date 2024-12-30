@@ -10,6 +10,8 @@ import {
   updateUserBookStatus,
   deleteBookFromUserBook,
   deleteUserLibrary,
+  deactivateUser,
+  activateUser,
 } from '../controller/admin-controller';
 
 import {
@@ -84,6 +86,20 @@ adminRouter.get(
   isAuthenticated,
   accessControl('getBooks'),
   fetchBookByAuthor
+);
+
+adminRouter.put(
+  '/user/deactivate',
+  isAuthenticated,
+  accessControl('deactivateUser'),
+  deactivateUser
+);
+
+adminRouter.put(
+  '/user/activate',
+  isAuthenticated,
+  accessControl('activateUser'),
+  activateUser
 );
 
 adminRouter.put(
