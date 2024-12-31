@@ -21,7 +21,7 @@ app.get('/', (req, res) => {
 });
 app.use(
   cors({
-    origin: 'http://localhost:3000', // Replace with your frontend's origin
+    origin: '*', // Replace with your frontend's origin
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
     credentials: true, // If your frontend sends cookies
   })
