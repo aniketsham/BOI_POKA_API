@@ -8,8 +8,8 @@ import adminRouter from './routes/admin-route';
 import userBookRouter from './routes/user-book-route';
 import superAdminRouter from './routes/superadmin-route';
 import innerCircleRouter from './routes/inner-circle-route';
+import cors from 'cors';
 import { deleteOutOfBoundsUsers } from './utils/cron-jobs';
-
 
 const app = express();
 dotenv.config();
@@ -19,7 +19,13 @@ connectDB();
 app.get('/', (req, res) => {
   res.send('Hello BOI POKA');
 });
-
+app.use(
+  cors({
+    origin: 'http://localhost:3000', // Replace with your frontend's origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+    credentials: true, // If your frontend sends cookies
+  })
+);
 app.use(express.json());
 
 app.use('/api/user', userRouter);
