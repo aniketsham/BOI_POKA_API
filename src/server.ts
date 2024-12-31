@@ -13,7 +13,7 @@ import { deleteOutOfBoundsUsers } from './utils/cron-jobs';
 
 const app = express();
 dotenv.config();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3333;
 connectDB();
 
 app.get('/', (req, res) => {
