@@ -10,6 +10,7 @@ import superAdminRouter from './routes/superadmin-route';
 import innerCircleRouter from './routes/inner-circle-route';
 import cors from 'cors';
 import { deleteOutOfBoundsUsers } from './utils/cron-jobs';
+import genreRouter from './routes/genre-route';
 
 const app = express();
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/superadmin', superAdminRouter);
 app.use('/api/book', bookRouter);
 app.use('/api/userbook', userBookRouter);
 app.use('/api/innercircle', innerCircleRouter);
+app.use('/api/genre', genreRouter);
 
 cron.schedule('0 0 * * *', deleteOutOfBoundsUsers);
 

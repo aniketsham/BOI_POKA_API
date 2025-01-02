@@ -13,7 +13,7 @@ export interface Book extends mongoose.Document {
   rating: number;
   addedAt: Date;
   updatedAt: Date;
-
+  isIndian: boolean;
   isDeleted: boolean;
   deletedAt?: Date;
   deletedBy?: string;
@@ -32,6 +32,7 @@ const bookSchema: mongoose.Schema<Book> = new mongoose.Schema({
   rating: { type: Number, required: true, default: 0.5 },
   addedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  isIndian: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false, select: false },
   deletedAt: { type: Date, select: false },
   deletedBy: { type: String, select: false },

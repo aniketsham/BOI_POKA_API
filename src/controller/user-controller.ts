@@ -5,6 +5,8 @@ import { CustomRequest } from '../types/types';
 import innerCircle from '../models/inner-circle';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import UserBook from '../models/userbook-model';
+import Genre from '../models/genre-model';
 //? Register a user
 export const registerUser = async (
   req: Request,
@@ -110,7 +112,7 @@ export const updateUser = async (
     }
 
     res.status(200).json({
-      message: 'User updated successfully', 
+      message: 'User updated successfully',
     });
   } catch (err) {
     next(err);
@@ -151,7 +153,7 @@ export const updatePassword = async (
   } catch (error) {
     next(error);
   }
-}
+};
 
 export const fetchInvites = async (
   req: CustomRequest,
@@ -400,6 +402,197 @@ export const leaveInnerCircle = async (
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    next(error);
+  }
+};
+
+export const getAnalytics = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+
+    // Get the number of books for the specific user
+    const userBooksCount = await UserBook.aggregate([
+      {
+        $match: { user: userId },
+      },
+      {
+        $unwind: '$libraries',
+      },
+      {
+        $unwind: '$libraries.shelves',
+      },
+      {
+        $unwind: '$libraries.shelves.books',
+      },
+      {
+        $group: {
+          _id: '$user',
+          bookCount: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: '$user',
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id',
+          fullName: '$user.fullName',
+          bookCount: 1,
+        },
+      },
+    ]);
+
+    // Get the number of books for each source for the specific user
+    const booksBySource = await UserBook.aggregate([
+      {
+        $match: { user: userId },
+      },
+      {
+        $unwind: '$libraries',
+      },
+      {
+        $unwind: '$libraries.shelves',
+      },
+      {
+        $unwind: '$libraries.shelves.books',
+      },
+      {
+        $group: {
+          _id: '$libraries.shelves.books.source.sourceType',
+          bookCount: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sourceType: '$_id',
+          bookCount: 1,
+        },
+      },
+    ]);
+
+    const booksByGenre = await UserBook.aggregate([
+      {
+        $match: { user: userId },
+      },
+      {
+        $unwind: '$libraries',
+      },
+      {
+        $unwind: '$libraries.shelves',
+      },
+      {
+        $unwind: '$libraries.shelves.books',
+      },
+      {
+        $lookup: {
+          from: 'books',
+          localField: 'libraries.shelves.books.bookId',
+          foreignField: '_id',
+          as: 'bookDetails',
+        },
+      },
+      {
+        $unwind: '$bookDetails',
+      },
+      {
+        $unwind: '$bookDetails.genre',
+      },
+      {
+        $group: {
+          _id: '$bookDetails.genre',
+          bookCount: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: 'genres',
+          localField: '_id',
+          foreignField: 'name',
+          as: 'genreDetails',
+        },
+      },
+      {
+        $unwind: '$genreDetails',
+      },
+      {
+        $project: {
+          _id: 0,
+          genre: '$_id',
+          bookCount: 1,
+          genreDetails: {
+            name: '$genreDetails.name',
+            category: '$genreDetails.category',
+          },
+        },
+      },
+    ]);
+
+    const fictionNonFictionCount = booksByGenre
+      .filter(
+        (genre) =>
+          genre.genreDetails.category === 'Fiction' ||
+          genre.genreDetails.category === 'Non-Fiction'
+      )
+      .reduce((sum, genre) => sum + genre.bookCount, 0);
+    const academicLeisureCount = booksByGenre
+      .filter(
+        (genre) =>
+          genre.genreDetails.category === 'Academic' ||
+          genre.genreDetails.category === 'Leisure'
+      )
+      .reduce((sum, genre) => sum + genre.bookCount, 0);
+
+    const fictionBooksCount = booksByGenre
+      .filter((genre) => genre.genreDetails.category === 'Fiction')
+      .reduce((sum, genre) => sum + genre.bookCount, 0);
+    const nonFictionBooksCount = booksByGenre
+      .filter((genre) => genre.genreDetails.category === 'Non-Fiction')
+      .reduce((sum, genre) => sum + genre.bookCount, 0);
+    const academicBooksCount = booksByGenre
+      .filter((genre) => genre.genreDetails.category === 'Academic')
+      .reduce((sum, genre) => sum + genre.bookCount, 0);
+    const leisureBooksCount = booksByGenre
+      .filter((genre) => genre.genreDetails.category === 'Leisure')
+      .reduce((sum, genre) => sum + genre.bookCount, 0);
+
+    const fictionPercentage = fictionNonFictionCount
+      ? (fictionBooksCount / fictionNonFictionCount) * 100
+      : 0;
+    const nonFictionPercentage = fictionNonFictionCount
+      ? (nonFictionBooksCount / fictionNonFictionCount) * 100
+      : 0;
+    const academicPercentage = academicLeisureCount
+      ? (academicBooksCount / academicLeisureCount) * 100
+      : 0;
+    const leisurePercentage = academicLeisureCount
+      ? (leisureBooksCount / academicLeisureCount) * 100
+      : 0;
+
+    res.status(200).json({
+      message: 'Analytics retrieved successfully',
+      userBooksCount,
+      booksBySource,
+      booksByGenre,
+      fictionPercentage,
+      nonFictionPercentage,
+      academicPercentage,
+      leisurePercentage,
+    });
+  } catch (error) {
     next(error);
   }
 };

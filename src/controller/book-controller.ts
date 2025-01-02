@@ -272,6 +272,10 @@ export const fetchBookByISBN = async (
       const isbnArray = googleBook.industryIdentifiers.map(
         (identifier: any) => identifier.identifier
       );
+      const isIndian = isbnArray.some((isbn: string) =>
+        isbn.startsWith('97893')
+      );
+
       book = new Book({
         title: googleBook.title,
         author: googleBook.authors,
@@ -283,6 +287,7 @@ export const fetchBookByISBN = async (
         coverImage: googleBook.imageLinks?.thumbnail || '',
         language: googleBook.language ? [googleBook.language] : [],
         rating: googleBook.averageRating,
+        isIndian,
       });
 
       await book.save();
