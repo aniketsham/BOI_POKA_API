@@ -860,3 +860,194 @@ export const getAllLoanedBooks = async (
     next(error);
   }
 };
+
+export const updateUserLibraryName = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { currentLibraryName, newLibraryName } = req.body;
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+
+    if (!currentLibraryName || !newLibraryName) {
+      res.status(400).json({
+        error: 'Current library name and new library name are required',
+      });
+      return;
+    }
+
+    const userBook = await UserBook.findOne({ user: userId });
+    if (!userBook) {
+      res.status(404).json({ error: 'User book record not found' });
+      return;
+    }
+
+    const library = userBook.libraries.find(
+      (lib) => lib.libraryName === currentLibraryName
+    );
+    if (!library) {
+      res.status(404).json({ error: 'Library not found' });
+      return;
+    }
+
+    library.libraryName = newLibraryName;
+    await userBook.save();
+
+    res.status(200).json({
+      message: 'Library name updated successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUserLibraryWithConsent = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { libraryName, consent } = req.body;
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+
+    if (!libraryName || !consent) {
+      res
+        .status(400)
+        .json({ message: 'Library name and consent are required' });
+      return;
+    }
+
+    const userBook = await UserBook.findOne({ user: userId });
+    if (!userBook) {
+      res.status(404).json({ message: 'User book record not found' });
+      return;
+    }
+
+    const library = userBook.libraries.find(
+      (lib) => lib.libraryName === libraryName
+    );
+    if (!library) {
+      res.status(404).json({ message: 'Library not found' });
+      return;
+    }
+
+    if (consent === 'yes') {
+      userBook.libraries = userBook.libraries.filter(
+        (lib) => lib.libraryName !== libraryName
+      );
+      await userBook.save();
+      res.status(200).json({
+        message: 'Library deleted successfully',
+        userBook,
+      });
+      return;
+    }
+
+    const booksInLibrary = library.shelves.flatMap((shelf) => shelf.books);
+    const booksInOtherLibraries = userBook.libraries
+      .filter((lib) => lib.libraryName !== libraryName)
+      .flatMap((lib) => lib.shelves)
+      .flatMap((shelf) => shelf.books);
+
+    const booksNotInOtherLibraries = booksInLibrary.filter(
+      (book) =>
+        !booksInOtherLibraries.some(
+          (otherBook) => otherBook.bookId.toString() === book.bookId.toString()
+        )
+    );
+
+    if (consent === 'no' && booksNotInOtherLibraries.length > 0) {
+      res.status(400).json({
+        message:
+          'Please move the books to another library before deleting this library',
+        booksNotInOtherLibraries,
+      });
+      return;
+    }
+
+    userBook.libraries = userBook.libraries.filter(
+      (lib) => lib.libraryName !== libraryName
+    );
+    await userBook.save();
+    res.status(200).json({
+      message: 'Library deleted successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const moveBooksToLibrary = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { sourceLibraryName, targetLibraryName, bookIds } = req.body;
+    const userId = req.user?._id as mongoose.Types.ObjectId;
+
+    if (
+      !sourceLibraryName ||
+      !targetLibraryName ||
+      !Array.isArray(bookIds) ||
+      bookIds.length === 0
+    ) {
+      res.status(400).json({
+        message:
+          'Source library name, target library name, and book IDs are required',
+      });
+      return;
+    }
+
+    const userBook = await UserBook.findOne({ user: userId });
+    if (!userBook) {
+      res.status(404).json({ message: 'User book record not found' });
+      return;
+    }
+
+    const sourceLibrary = userBook.libraries.find(
+      (lib) => lib.libraryName === sourceLibraryName
+    );
+    if (!sourceLibrary) {
+      res.status(404).json({ message: 'Source library not found' });
+      return;
+    }
+
+    const targetLibrary = userBook.libraries.find(
+      (lib) => lib.libraryName === targetLibraryName
+    );
+    if (!targetLibrary) {
+      res.status(404).json({ message: 'Target library not found' });
+      return;
+    }
+
+    const booksToMove = sourceLibrary.shelves.flatMap((shelf) =>
+      shelf.books.filter((book) => bookIds.includes(book.bookId.toString()))
+    );
+
+    if (booksToMove.length === 0) {
+      res.status(400).json({ message: 'No books found to move' });
+      return;
+    }
+
+    sourceLibrary.shelves.forEach((shelf) => {
+      shelf.books = shelf.books.filter(
+        (book) => !bookIds.includes(book.bookId.toString())
+      );
+    });
+
+    targetLibrary.shelves[0].books.push(...booksToMove);
+
+    await userBook.save();
+
+    res.status(200).json({
+      message: 'Books moved successfully',
+      userBook,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

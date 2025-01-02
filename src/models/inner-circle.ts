@@ -18,7 +18,7 @@ export interface InnerCircleInterface extends Document {
   circleGenre: string[];
   members: Member[];
 
-  ISBN: string;
+  ISBN: string[];
 }
 
 const MemberSchema: Schema = new Schema({
@@ -51,7 +51,7 @@ const InnerCircleSchema: Schema = new Schema({
   circleDescription: { type: String },
   circleGenre: { type: [String], required: true },
   members: { type: [MemberSchema], required: true },
-  ISBN: { type: String, ref: 'UserBook', required: true },
+  ISBN: [{ type: String, ref: 'UserBook', required: true }],
 });
 
 export default mongoose.model<InnerCircleInterface>(
