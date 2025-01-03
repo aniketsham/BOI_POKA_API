@@ -9,7 +9,8 @@ export const isAuthenticated = async (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.body.token;
+  const authorizationHeader = req.headers.authorization;
+  const token = authorizationHeader?.split(' ')[1];
 
   if (!token) {
     res.status(401).json({
