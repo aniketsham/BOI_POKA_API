@@ -63,8 +63,7 @@ export const loginAdmin = async (
     }
     const token = jwt.sign(
       { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '1h' }
+      process.env.JWT_SECRET as string
     );
     res.status(200).json({
       message: 'Login successful',
@@ -81,11 +80,19 @@ export const getAllUsers = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const users = await User.find();
+    const offset = parseInt(req.query.offset as string) || 0;
+    const pageLimit = parseInt(req.query.pageLimit as string) || 10;
+
+    const users = await User.find().skip(offset).limit(pageLimit);
+
+    const totalUsers = await User.countDocuments();
 
     res.status(200).json({
       message: 'Users retrieved successfully',
       users: users,
+      totalUsers,
+      offset,
+      pageLimit,
     });
   } catch (error) {
     next(error);
@@ -609,7 +616,6 @@ export const getDashboardData = async (
       }
     }
 
-    // Mark the rest of the books as "Others"
     const knownGenres = genreDistribution.map((genre) => genre.genre);
     const otherBooksCount = await Book.countDocuments({
       genre: { $nin: knownGenres },
