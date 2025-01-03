@@ -10,6 +10,13 @@ export const isAuthenticated = async (
   next: NextFunction
 ) => {
   const authorizationHeader = req.headers.authorization;
+
+  if (!authorizationHeader?.startsWith('Bearer')) {
+    res.status(401).json({
+      error: 'No token provided, access denied, Please login',
+    });
+    return;
+  }
   const token = authorizationHeader?.split(' ')[1];
 
   if (!token) {

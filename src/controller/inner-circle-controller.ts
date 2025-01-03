@@ -24,6 +24,19 @@ export const createInnerCircle = async (
       return;
     }
 
+    // Check if an Inner Circle with the same name already exists
+    const existingCircle = await InnerCircle.findOne({ circleName }).session(
+      session
+    );
+    if (existingCircle) {
+      res
+        .status(400)
+        .json({ error: 'An Inner Circle with the same name already exists' });
+      await session.abortTransaction();
+      session.endSession();
+      return;
+    }
+
     const newInnerCircle = new InnerCircle({
       circleName,
       circleGenre,
