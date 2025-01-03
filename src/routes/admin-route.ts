@@ -12,6 +12,7 @@ import {
   deleteUserLibrary,
   deactivateUser,
   activateUser,
+  getDashboardData,
 } from '../controller/admin-controller';
 
 import {
@@ -136,4 +137,6 @@ adminRouter.get(
   accessControl('getUserBooks'),
   fetchAllUserBook
 );
+
+adminRouter.get('/getDashBoardData', isAuthenticated, getDashboardData);
 export default adminRouter;
