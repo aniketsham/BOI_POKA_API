@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import Admin from '../models/admin-model';
 import jwt from 'jsonwebtoken';
-import User from '../models/user-model';
 import bcrypt from 'bcrypt';
-import Book from '../models/book-model';
-import UserBook from '../models/userbook-model';
 import { CustomRequest } from '../types/types';
 import mongoose from 'mongoose';
+
+import Book from '../models/book-model';
+import User from '../models/user-model';
+import InnerCircle from '../models/inner-circle';
+import UserBook from '../models/userbook-model';
+import Genre from '../models/genre-model';
+
 export const registerAdmin = async (
   req: Request,
   res: Response,
@@ -455,6 +459,178 @@ export const activateUser = async (
     }
 
     res.status(200).json({ message: 'Users activated successfully', result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getDashboardData = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Total books from Book collection
+    const totalBooks = await Book.countDocuments();
+
+    // Total users from User collection
+    const totalUsers = await User.countDocuments();
+
+    // Number of Inner Circles from InnerCircle collection
+    const totalInnerCircles = await InnerCircle.countDocuments();
+
+    // Books added into Books in the last month
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const booksAddedLastMonth = await Book.countDocuments({
+      addedAt: { $gte: lastMonth },
+    });
+
+    // Pie Chart Data of Genre
+    const genreDistribution = await Book.aggregate([
+      { $unwind: '$genre' },
+      {
+        $group: {
+          _id: '$genre',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: 'genres',
+          localField: '_id',
+          foreignField: 'name',
+          as: 'genreDetails',
+        },
+      },
+      { $unwind: '$genreDetails' },
+      {
+        $project: {
+          _id: 0,
+          genre: '$_id',
+          count: 1,
+          category: '$genreDetails.category',
+        },
+      },
+    ]);
+
+    const bookTypeDistribution = await UserBook.aggregate([
+      { $unwind: '$libraries' },
+      { $unwind: '$libraries.shelves' },
+      { $unwind: '$libraries.shelves.books' },
+      {
+        $group: {
+          _id: '$libraries.shelves.books.source.sourceType',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          type: '$_id',
+          count: 1,
+        },
+      },
+    ]);
+
+    // Source name distribution from UserBook
+    const sourceNameDistribution = await UserBook.aggregate([
+      { $unwind: '$libraries' },
+      { $unwind: '$libraries.shelves' },
+      { $unwind: '$libraries.shelves.books' },
+      {
+        $group: {
+          _id: '$libraries.shelves.books.source.sourceName',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sourceName: '$_id',
+          count: 1,
+        },
+      },
+    ]);
+
+    const topBooks = await UserBook.aggregate([
+      { $unwind: '$libraries' },
+      { $unwind: '$libraries.shelves' },
+      { $unwind: '$libraries.shelves.books' },
+      {
+        $group: {
+          _id: '$libraries.shelves.books.bookId',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
+      {
+        $limit: 5,
+      },
+      {
+        $lookup: {
+          from: 'books',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'bookDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$bookDetails',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          bookId: '$_id',
+          title: '$bookDetails.title',
+          author: '$bookDetails.author',
+          count: 1,
+        },
+      },
+    ]);
+
+    const topBooksSet = new Set(topBooks.map((book) => book.bookId.toString()));
+    while (topBooks.length < 5) {
+      const randomBook = await Book.aggregate([{ $sample: { size: 1 } }]);
+      const randomBookId = randomBook[0]._id.toString();
+      if (!topBooksSet.has(randomBookId)) {
+        topBooks.push({
+          bookId: randomBook[0]._id,
+          title: randomBook[0].title,
+          author: randomBook[0].author,
+          count: 0,
+        });
+        topBooksSet.add(randomBookId);
+      }
+    }
+
+    // Mark the rest of the books as "Others"
+    const knownGenres = genreDistribution.map((genre) => genre.genre);
+    const otherBooksCount = await Book.countDocuments({
+      genre: { $nin: knownGenres },
+    });
+
+    genreDistribution.push({
+      genre: 'Others',
+      count: otherBooksCount,
+      category: 'Others',
+    });
+
+    res.status(200).json({
+      totalBooks,
+      totalUsers,
+      totalInnerCircles,
+      booksAddedLastMonth,
+      genreDistribution,
+      bookTypeDistribution,
+      sourceNameDistribution,
+      topBooks,
+    });
   } catch (error) {
     next(error);
   }
